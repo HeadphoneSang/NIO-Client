@@ -26,7 +26,8 @@ export default {
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        background-color: #ECEFFF;
+        background-image: radial-gradient( #969ed8,#ECEFFF);
+
         padding-bottom: 30px;
         .icon{
             width: 100%;

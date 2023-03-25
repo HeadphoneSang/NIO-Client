@@ -17,6 +17,7 @@ async function createWindow() {
     width: 550,
     height: 650,
     // frame:false,
+    show:false,
     resizable:false,
     webPreferences: {
       
@@ -26,7 +27,9 @@ async function createWindow() {
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
     }
   })
-
+  win.on('ready-to-show',()=>{
+    win.show()
+  })
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)

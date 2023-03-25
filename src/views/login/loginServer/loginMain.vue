@@ -17,6 +17,8 @@ export default {
 
 <style lang="less" scoped>
     .login-main-container{
+        .title-container{
 
+        }
     }
 </style>

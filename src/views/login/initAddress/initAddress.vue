@@ -80,10 +80,11 @@ export default {
                 span{
                     color: #637DFF;
                     cursor: pointer;
+                    font-size: 14px;
                 }
             }
             img{
-                height: 17px;
+                height: 15px;
                 margin-left: 5px;
                 cursor: pointer;
             }
@@ -92,6 +93,7 @@ export default {
             width: 100%;
             .select-bar{
                 margin-bottom: 10px;
+                
                 .rate_tip {
                     position: relative;
                     display: flex;

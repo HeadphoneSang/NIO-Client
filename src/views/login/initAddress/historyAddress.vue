@@ -125,7 +125,7 @@ export default {
       margin-top: 20px;
       .submit-tips{
         margin-top: 20px;
-        font-size: 15px;
+        font-size: 14px;
         color: #7b7b7b;
       }
       input[type="submit"]{
@@ -133,7 +133,7 @@ export default {
         background-color: #7690FF;
         color: #ffffff;
         height: 60px;
-        border-radius: 10px;
+        border-radius: 50px;
         font-weight: 600;
         width: 100%;
       }
