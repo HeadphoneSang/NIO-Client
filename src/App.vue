@@ -3,6 +3,9 @@
 </template>
 
 <style lang="less">
+html{
+  cursor: url('@/assets/download.png'), pointer;
+}
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
