@@ -82,7 +82,7 @@ export default {
       }
       input[type="submit"]{
         border: 0 solid #ffffff;
-        background-color: #88a7d5;
+        background-color: #7690FF;
         color: #ffffff;
         height: 60px;
         border-radius: 10px;
@@ -91,7 +91,8 @@ export default {
       }
       input[type="submit"]:hover{
         outline: none;
-        background-color: #2e6cb7;
+        background-color: #546fe6;
+        transition: all 0.5s;
       }
     }
     .select-box{

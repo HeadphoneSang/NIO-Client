@@ -47,9 +47,9 @@ export default {
         changeSelect(str){
             this.isRateActive = str
             if(str=='week'){
-                return this.$router.push("/initAddress/historyAddress")
+                return this.$router.push("/mainEnter/initAddress/historyAddress")
             }
-            this.$router.push("/initAddress/addNewAddress")
+            this.$router.push("/mainEnter/initAddress/addNewAddress")
         }
     }
 }
@@ -78,7 +78,7 @@ export default {
             div:nth-child(2){
                 color: #939393;
                 span{
-                    color: #0485d4;
+                    color: #637DFF;
                     cursor: pointer;
                 }
             }

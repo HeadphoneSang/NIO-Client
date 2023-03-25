@@ -17,10 +17,10 @@
     <div class="place"></div>
     <div :class="showWarn?'warn-tips':'warn-hidden'" >连接地址不可以为空</div>
     <div class="select-box">
-      <input type="checkbox" id="check" v-model="isRemeber"><label for="check">记录地址</label>
+      <input type="checkbox" id="check" v-model="isRemeber"><label for="check">下次自动连接</label>
     </div>
     <div class="submit-box">
-      <input type="submit" value="连接" @click.prevent="">
+      <input type="submit" value="连接" @click.prevent="submit">
       <div class="submit-tips">
         点击「登录」表示连接到指定远程文件服务器
       </div>
@@ -85,6 +85,9 @@ export default {
       },
       clickSub(ip){
         this.remoteAddress = ip
+      },
+      submit(){
+        this.$router.push('/mainEnter/loginMain')
       }
     },
     created(){
@@ -127,7 +130,7 @@ export default {
       }
       input[type="submit"]{
         border: 0 solid #ffffff;
-        background-color: #88a7d5;
+        background-color: #7690FF;
         color: #ffffff;
         height: 60px;
         border-radius: 10px;
@@ -136,7 +139,8 @@ export default {
       }
       input[type="submit"]:hover{
         outline: none;
-        background-color: #2e6cb7;
+        background-color: #546fe6;
+        transition: all 0.5s;
       }
     }
     .select-box{

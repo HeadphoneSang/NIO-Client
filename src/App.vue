@@ -3,8 +3,9 @@
 </template>
 
 <style lang="less">
-html{
+html,body{
   cursor: url('@/assets/download.png'), pointer;
+  height: 100%;
 }
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
@@ -12,6 +13,7 @@ html{
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+  height: 100%;
 }
 
 nav {
