@@ -14,7 +14,7 @@ Menu.setApplicationMenu(null)
 async function createWindow() {
   // Create the browser window.
   const win = new BrowserWindow({
-    width: 550,
+    width: 520,
     height: 650,
     // frame:false,
     show:false,

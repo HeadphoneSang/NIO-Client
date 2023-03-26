@@ -119,6 +119,8 @@ export default {
       margin-top: 10px;
       font-size: 13px;
       color: #ff0000;
+      margin-bottom: -15px;
+
     }
     .submit-box{
       width: 100%;
@@ -136,9 +138,10 @@ export default {
         border-radius: 50px;
         font-weight: 600;
         width: 100%;
+        outline: none;
       }
       input[type="submit"]:hover{
-        outline: none;
+        
         background-color: #546fe6;
         transition: all 0.5s;
       }

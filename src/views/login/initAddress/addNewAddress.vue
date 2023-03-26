@@ -69,6 +69,7 @@ export default {
       align-items: center;
       justify-content: flex-end;
       margin-top: 10px;
+      margin-bottom: -15px;
       font-size: 13px;
       color: #ff0000;
     }
@@ -88,9 +89,9 @@ export default {
         border-radius: 50px;
         font-weight: 600;
         width: 100%;
+        outline: none;
       }
       input[type="submit"]:hover{
-        outline: none;
         background-color: #546fe6;
         transition: all 0.5s;
       }
