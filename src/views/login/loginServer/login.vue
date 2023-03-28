@@ -11,7 +11,7 @@
       <input type="checkbox" id="autoLogin" v-model="autoLogin"><label for="autoLogin">下次自动登录</label>
       
     </div>
-    <div class="blue-gradul-button cursor-pointer">
+    <div class="blue-gradul-button cursor-pointer" @click="login">
       登录
     </div>
     
@@ -22,6 +22,7 @@
 </template>
 
 <script>
+import {ipcRenderer} from 'electron'
 export default {
   data(){
     return {
@@ -36,6 +37,10 @@ export default {
   methods:{
     changePasswordShow(){
       this.showPassword = !this.showPassword
+    },
+    async login(){
+      ipcRenderer.invoke('clickloginButton','111')
+      
     }
   }
 }

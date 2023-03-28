@@ -6,13 +6,18 @@ import MainEnterView from '@/views/login/initAddress/mainEnter.vue'
 import LoginMainView from '@/views/login/loginServer/loginMain.vue'
 import LoginView from '@/views/login/loginServer/login.vue'
 import RegisterView from '@/views/login/loginServer/register.vue'
-
+import HomeMainView from '@/views/client/homePage/homeMain.vue'
 
 const routes = [
   {
     path: '/',
     name: 'mainEnter',
     redirect:'/mainEnter',
+  },
+  {
+    path: '/homePage',
+    name: 'homePage',
+    component:HomeMainView
   },
   {
     path: '/mainEnter',

@@ -1,15 +1,18 @@
 'use strict'
 
-import { app, protocol, BrowserWindow,Menu } from 'electron'
+import { app, protocol, BrowserWindow,Menu,ipcMain  } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
+import handlers from './main-js/eventHandlers.js'
+const winURL = process.env.NODE_ENV === 'development' ? `http://localhost:8080` : `file://${__dirname}/index.html`
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
-Menu.setApplicationMenu(null)
+// Menu.setApplicationMenu(null)
 //删除工具栏
 async function createWindow() {
   // Create the browser window.
@@ -18,17 +21,23 @@ async function createWindow() {
     height: 650,
     // frame:false,
     show:false,
-    resizable:false,
+    // resizable:false,
     webPreferences: {
       
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-      contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
+      nodeIntegration: true,
+      contextIsolation: false
     }
   })
+  registerListener(win)
+
   win.on('ready-to-show',()=>{
     win.show()
+  })
+  win.on('close',()=>{
+
+    app.quit()
   })
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
@@ -56,7 +65,6 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
-// This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
@@ -77,3 +85,12 @@ if (isDevelopment) {
     })
   }
 }
+
+/**
+ * 注册所有进程通信之间的监听器
+ * @param {*} win 登录窗口对象 
+ */
+const registerListener = function(win){
+  Object.keys(handlers.handlers).forEach(e=>{handlers.handlers[e](win)})
+}
+
