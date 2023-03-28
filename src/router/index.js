@@ -7,6 +7,12 @@ import LoginMainView from '@/views/login/loginServer/loginMain.vue'
 import LoginView from '@/views/login/loginServer/login.vue'
 import RegisterView from '@/views/login/loginServer/register.vue'
 import HomeMainView from '@/views/client/homePage/homeMain.vue'
+import FileView from '@/views/client/firstPages/files.vue'
+import Favorite from '@/views/client/firstPages/favorite.vue'
+import Recycle from '@/views/client/firstPages/recycle.vue'
+import Lock from '@/views/client/firstPages/lock.vue'
+import Transport from '@/views/client/firstPages/transport.vue'
+
 
 const routes = [
   {
@@ -17,7 +23,35 @@ const routes = [
   {
     path: '/homePage',
     name: 'homePage',
-    component:HomeMainView
+    component:HomeMainView,
+    redirect:'/homePage/files',
+    children:[
+      {
+        path:'files',
+        name:'files',
+        component:FileView,
+      },
+      {
+        path:'favorite',
+        name:'favorite',
+        component:Favorite,
+      },
+      {
+        path:'recycle',
+        name:'recycle',
+        component:Recycle,
+      },
+      {
+        path:'lock',
+        name:'lock',
+        component:Lock,
+      },
+      {
+        path:'transport',
+        name:'transport',
+        component:Transport,
+      },
+    ]
   },
   {
     path: '/mainEnter',
