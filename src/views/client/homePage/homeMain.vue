@@ -23,8 +23,16 @@
 
 
       <!-- 左侧右下角用户信息等等 -->
-      <div class="user-info">
-
+      <div class="user-info cursor-pointer">
+        <div class="head">
+          <img :src="userInfo.head" alt="">
+          <div class="nick">
+            {{ userInfo.nick!==''?userInfo.nick:userInfo.account }}
+          </div>
+        </div>
+        <div class="info">
+          <img src="@/assets/info.png" alt="">
+        </div>
       </div>
       <!-- 左侧右下角用户信息等等 -->
 
@@ -38,9 +46,16 @@
 </template>
 
 <script>
+
 export default {
   data(){
     return {
+      userInfo:{
+        nick:'19892332313',
+        account:'32331335333',
+        head:require('@/assets/head.png'),
+        permission:'user'
+      },
       functions:[
         {
           name:'文件',
@@ -90,13 +105,13 @@ export default {
     
     .left-content{
       height: 100%;
-      width: 230px;
+      width: 240px;
       background-color: #F5F5F6;
       display: flex;
       flex-direction: column;
-      align-content: space-between;
       box-sizing: border-box;
-      padding: 10px;
+      padding: 18px;
+      justify-content: space-between;
       .functions{
         width: 100%;
         .function-bar{
@@ -123,11 +138,40 @@ export default {
           margin-bottom: 15px;
         }
       }
+      .user-info{
+        display: flex;
+        align-items: center;
+        border-top: 1px solid #e1e1e1;
+        box-sizing: border-box;
+        padding: 20px 0px 10px 0px;
+        justify-content: space-between;
+        background-color: #F5F5F6;
+        user-select: none;
+        .head{
+          display: flex;
+          align-items: center;
+          div{
+            margin-left: 10px;
+            font-size: 15px;
+            color: #3b3b3b;
+          }
+          img{
+            height: 40px;
+            background-color: #E4E6EE;
+            border-radius: 50%;
+          }
+        }
+        .info{
+          img{
+            height: 20px;
+          }
+        }
+      }
     }
     .right-context{
       position: absolute;
       height: 100%;
-      width: calc(100% - 230px);
+      width: calc(100% - 240px);
       right: 0;
       top: 0;
     }
