@@ -1,8 +1,7 @@
 'use strict'
 
-import { app, protocol, BrowserWindow,Menu,ipcMain  } from 'electron'
+import { app, protocol, BrowserWindow,Menu} from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import handlers from './main-js/eventHandlers.js'
 const winURL = process.env.NODE_ENV === 'development' ? `http://localhost:8080` : `file://${__dirname}/index.html`
 
