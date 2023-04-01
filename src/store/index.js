@@ -1,4 +1,3 @@
-import { stat } from 'original-fs'
 import { createStore } from 'vuex'
 
 export default createStore({
@@ -10,7 +9,19 @@ export default createStore({
           {
             name:'测试文件夹0',
             modifier:'RCUzQSU1QyV1NUJBMyV1NEYyMA=='
-          }
+          }, 
+          {
+            name:'测试文件夹1',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NadA=='
+          }, 
+          {
+            name:'测试文件夹2',
+            modifier:'RCUzQSU1QyV1NUJBMyV1Nad1=='
+          }, 
+          {
+            name:'测试文件夹3',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NadA4=='
+          }, 
         ],
         needFresh:false
       },
@@ -60,7 +71,11 @@ export default createStore({
      * @param {*} params 参数对象,{title:表示要跳转的是哪个模块的路径}
      */
     finishedFresh(state,params){
-      state.pathMap[params.moduleName].needFresh = false
+      state.pathMap[params.title].needFresh = false
+    },
+    clearPath(state,title){
+      state.pathMap[title].stack = []
+      state.pathMap[title].needFresh = true
     }
   },
   actions: {

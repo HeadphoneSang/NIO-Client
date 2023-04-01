@@ -115,6 +115,7 @@ export default {
       .functions{
         width: 100%;
         .function-bar{
+          user-select: none;
             width: 100%;
             text-align: left;
             box-sizing: border-box;
