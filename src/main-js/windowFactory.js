@@ -8,9 +8,9 @@ const winURL = process.env.NODE_ENV === 'development' ? `http://localhost:8080` 
  */
 const createHomeWin = function(){
   const homeWin = new BrowserWindow({
-    width:1150,
+    width:1100,
     height:720,
-    minWidth:900,
+    minWidth:1100,
     minHeight:600,
     show:false,
     webPreferences: {

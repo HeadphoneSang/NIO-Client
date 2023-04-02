@@ -30,7 +30,7 @@ html,body{
   width: 90%;
   position: relative;
   justify-content: center;
-  
+  user-select: none;
   .custom-icon-right{
     height: 30px;
     position: absolute;
@@ -54,7 +54,6 @@ html,body{
     margin: 0;
     border-radius: 10px;
     border: 1px solid #ffffff;
-    background-color: #F5F5F6;
     box-sizing: border-box;
   }
   input:focus{

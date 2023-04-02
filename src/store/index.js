@@ -3,8 +3,30 @@ import { createStore } from 'vuex'
 export default createStore({
   state: {
     pathMap:{
-      files:{
+      files:{ 
         title:'文件',
+        stack:[
+          {
+            name:'测试文件夹0',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NEYyMA=='
+          },
+          {  
+            name:'测试文件夹1',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NadA=='
+          },  
+          {
+            name:'测试文件夹2',
+            modifier:'RCUzQSU1QyV1NUJBMyV1Nad1=='
+          },
+          {
+            name:'测试文件夹3',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NadA4=='
+          }, 
+        ],
+        needFresh:false
+      },
+      favorite:{
+        title:'收藏夹',
         stack:[
           {
             name:'测试文件夹0',
@@ -25,9 +47,58 @@ export default createStore({
         ],
         needFresh:false
       },
-      favorite:[],
-      recycle:[],
-      lock:[]
+      recycle:{
+        title:'回收站',
+        stack:[
+          {
+            name:'测试文件夹-1',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NEYyMA==11'
+          }, 
+          {
+            name:'测试文件夹0',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NEYyMA=='
+          }, 
+          { 
+            name:'测试文件夹1',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NadA=='
+          },
+          {
+            name:'测试文件夹2',
+            modifier:'RCUzQSU1QyV1NUJBMyV1Nad1=='
+          }, 
+          {
+            name:'测试文件夹3',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NadA4=='
+          }, 
+          {
+            name:'测试文件夹4',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NadA4=1='
+          }, 
+        ],
+        needFresh:false
+      },
+      lock:{
+        title:'密码箱',
+        stack:[
+          {
+            name:'测试文件夹0',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NEYyMA=='
+          }, 
+          {
+            name:'测试文件夹1',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NadA=='
+          }, 
+          {
+            name:'测试文件夹2',
+            modifier:'RCUzQSU1QyV1NUJBMyV1Nad1=='
+          }, 
+          {
+            name:'测试文件夹3',
+            modifier:'RCUzQSU1QyV1NUJBMyV1NadA4=='
+          }, 
+        ],
+        needFresh:false
+      },
     }
   },
   getters: {
@@ -77,8 +148,8 @@ export default createStore({
       state.pathMap[title].stack = []
       state.pathMap[title].needFresh = true
     }
-  },
-  actions: {
+  }, 
+  actions: { 
   },
   modules: {
   }

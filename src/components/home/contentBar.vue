@@ -1,13 +1,25 @@
 <template>
   <div class="content-bar">
     <div class="content-container">
-      <div :class="'cursor-pointer '+(pathMap[title].stack.length!==0?'content-item':'content-item-last')" @click="clickTitle()">{{ pathMap[title].title }}</div>
-      <div :class="'cursor-pointer '+(index!==pathMap[title].stack.length-1?'content-item':'content-item-last')" v-for="(item,index) in itemList" :key="index" @click="clickPreContent(item)">
-        {{ item.name }}
+      <div :class="'cursor-pointer '+(pathMap[title].stack.length!==0?'content-item':'content-item-last')" @click.prevent="clickTitle()">{{ pathMap[title].title }}</div>
+      <div v-if="itemList.length>max" class="cursor-pointer content-item hiddenMore" @click.prevent="clickMore()" @mouseenter.prevent="hoverSub=true" @mouseleave.prevent="hoverSub=false">
+        ...
+        <div class="back" v-if="hoverSub"></div>
+        <div :class="showSubContent?'more-list':'unshow'">
+          <div class="sub-file" v-for="(item,index) in itemList.slice(0,itemList.length-max)" :key="index" @click.prevent="clickPreContent(item)" @blur="clickMoreItem(item)">{{ item.name.length>fileLength?item.name.substring(0,fileLength)+'...':item.name }}</div>
+        </div>
+      </div>
+      <div :class="'cursor-pointer '+(index!==(Math.min(itemList.length-1,max-1))?'content-item':'content-item-last')" v-for="(item,index) in itemList.slice(Math.max(0,itemList.length-max))" :key="index" @click.prevent="clickPreContent(item)">
+        {{ item.name.length>fileLength?item.name.substring(0,fileLength)+'...':item.name }}
       </div>
     </div>
     <div class="right-additions">
-      111
+      <div class="custom-input">
+        <input type="text">
+        <img src="@/assets/home/search.png" class="custom-icon-right">
+      </div>
+      <div class="upload cursor-pointer">
+      </div>
     </div>
   </div>
 </template>
@@ -26,7 +38,16 @@ export default {
   data(){
     return {
       itemList:[],
-      pathObj:{}
+      max:4,//路径栏最多显示的目录数目
+      fileLength:6,
+      pathObj:{},
+      showSubContent:false,
+      hoverSub:false,
+      unshow:(e)=>{
+        if (!(e.target.className.indexOf('content-item')!==-1||e.target.className.indexOf('sub-file')!==-1)) {
+          this.showSubContent =false
+        }
+      }
     }
   },
   methods:{
@@ -87,14 +108,35 @@ export default {
     initData(){
       this.itemList = this.pathMap[this.title].stack.slice(0)
       //浅复制一份文件路径数据
+    },
+    clickMore(){
+      this.showSubContent= !this.showSubContent
+    },
+    clickMoreItem(item){
+      alert(1)
     }
   },created(){
     this.initData()
+    
+  },mounted(){
+      document.addEventListener('click', this.unshow,true)  
+  },
+  beforeUnmount(){
+    document.removeEventListener('click', this.unshow, true)
   }
+ 
 }
 </script>
 
 <style lang="less" scoped>
+  @keyframes graduallymove {
+        0%{
+          height: 10px;
+        }
+        100%{
+          height: 100px;
+      }
+  }
   .content-bar{
     width: 100%;
     height: 120px;
@@ -104,25 +146,99 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    .unshow{
+      .sub-file{
+        display: none;
+      }
+      max-height: 0px;
+    }
+    .hiddenMore{
+      position: relative;
+      .back{
+        height: 25px;
+        width: 25px;
+        border-radius: 5px;
+        position: absolute;
+        background-color: #dce2ff;
+        left: 5px;
+        top: 12px;
+        z-index: -1;
+      }
+    }
+    .more-list{
+      position: absolute;
+      color: #000000;
+      background-color: #ffffff;
+      z-index: 99;
+      box-shadow: 1px 1px 1px rgba(230, 230, 230, 0.5),
+      -1px -1px 1px rgba(230, 230, 230, 0.5),
+      1px -1px 5px rgba(230, 230, 230, 0.5),
+      -2px 2px 2px rgba(230, 230, 230, 0.5);
+      padding: 5px;
+      border-radius: 10px;
+      transition: all 0.5s;
+      .sub-file{
+        font-size: 14px;
+        position: relative;
+        box-sizing: border-box;
+        padding: 5px;
+        min-width: 150px;
+        text-align: left;
+        border-radius: 5px;
+      }
+      .sub-file:hover{
+        background-color: #eaeaea;
+      }
+    }
+    .right-additions{
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      width: 25%;
+      .upload{
+        user-select: none;
+        margin-left: -10px;
+        background-image: url(@/assets/home/add2.png);
+        height: 30px;
+        width: 30px;
+        background-size: cover;
+      }
+      .upload:hover{
+        background-image: url(@/assets/home/add3.png);
+      }
+      .custom-input{
+        width: 80%;        
+        .custom-icon-right{
+          box-sizing: border-box;
+          height: 20px;
+          top: 15px;
+          right: 25px;
+        }
+        input{
+          background-color: #ffffff;
+          width: 80%;
+        }
+      }
+    }
     .content-container{
       display: flex;
       .content-item,.content-item-last{
         box-sizing: border-box;
         padding: 10px 15px 10px 10px;
         position: relative;
-        font-size: 18px;
-        color: #909090;
+        font-size: 17px;
+        color: #a7a7a7;
         user-select: none;
       }
       .content-item-last{
         color: #141414;
         padding: 10px 10px 10px 10px;
         font-weight: 600;
-        transition: color 1.2s;
+        transition: color 1s;
       }
       .content-item::after{
         position: absolute;
-        content: ' ';
+        content: '';
         width: 8px;
         height: 8px;
         right: 0;
@@ -133,7 +249,7 @@ export default {
         
       }
       .content-item:hover{
-        color: #487ac4;
+        color: #7E92FA;
       }
     }
   }
