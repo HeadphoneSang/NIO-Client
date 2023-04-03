@@ -12,7 +12,7 @@ export default createStore({
           },
           {  
             name:'测试文件夹1',
-            modifier:'RCUzQSU1QyV1NUJBMyV1NadA=='
+            modifier:'RCUzQSU1QyV1NUJBMyV1NadA==' 
           },  
           {
             name:'测试文件夹2',
@@ -21,7 +21,14 @@ export default createStore({
           {
             name:'测试文件夹3',
             modifier:'RCUzQSU1QyV1NUJBMyV1NadA4=='
-          }, 
+          },
+           
+        ],
+        fileList:[
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBMyV11212NadA4=='
+          },
         ],
         needFresh:false
       },
@@ -54,7 +61,7 @@ export default createStore({
             name:'测试文件夹-1',
             modifier:'RCUzQSU1QyV1NUJBMyV1NEYyMA==11'
           }, 
-          {
+          { 
             name:'测试文件夹0',
             modifier:'RCUzQSU1QyV1NUJBMyV1NEYyMA=='
           }, 
@@ -74,6 +81,100 @@ export default createStore({
             name:'测试文件夹4',
             modifier:'RCUzQSU1QyV1NUJBMyV1NadA4=1='
           }, 
+        ],
+        fileList:[
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBMyV11212NadA1234==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBMyV11212N141123adA4==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+            
+          },
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1N5131UJBMyV11211442NadA4==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
+          {
+            name:'tools',
+            modifier:'RCU123zQSU1QyV1NUJBM1231yV11212NadA4==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBM1231yV11211132NadA4==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          }, 
+          { 
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
+          {
+            name:'tools',
+            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
+          {
+            name:'哈哈哈哈234',
+            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
+            status:0, 
+            type:'directory',
+            time:'2023/4/3'
+          },
         ],
         needFresh:false
       },

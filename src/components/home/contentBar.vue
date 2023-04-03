@@ -139,7 +139,7 @@ export default {
   }
   .content-bar{
     width: 100%;
-    height: 120px;
+    height: 100px;
     box-sizing: border-box;
     padding: 50px 30px 20px 30px;
     // background-color: #487ac4;
