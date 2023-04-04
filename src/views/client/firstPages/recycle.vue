@@ -1,27 +1,26 @@
 <template>
   <div class="recycle-container">
     <ContentBar :title="'recycle'"></ContentBar>
-    <HomeBody :title="'recycle'"></HomeBody>
+    <homeBody :title="'recycle'"></homeBody>
   </div>
 </template>
 
 <script>
 import ContentBar from '@/components/home/contentBar.vue'
-import HomeBody from '@/components/home/homeBody.vue'
+import homeBody from '@/components/home/homeBody.vue';
 export default {
   components:{
     ContentBar,
-    HomeBody
+    homeBody
   }
 }
 </script>
 
 <style lang="less" scoped>
   .recycle-container{
-    widows: 100%;
     height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    
   }
 </style>

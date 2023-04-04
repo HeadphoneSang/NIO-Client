@@ -37,6 +37,7 @@ export default {
     },
     created(){
         this.ico = require('@/assets/typesIcon/'+this.item.type+'.png')
+        console.log(this.ico)
     }
 }
 </script>

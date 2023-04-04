@@ -85,7 +85,6 @@ export default {
             box-sizing: border-box;
             padding:
             50px 10px 60px 10px;
-            // background-color: aqua;
         }
     }
 </style>
