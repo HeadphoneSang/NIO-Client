@@ -9,7 +9,7 @@ html,body{
 }
 
 .cursor-pointer{
-  cursor: url('@/assets/point.png'),pointer;
+  cursor: url('@/assets/point.png'), pointer;
 }
 .blue-gradul-button{
 
@@ -19,11 +19,17 @@ html,body{
   color: #F5F5F6;
   border-radius: 15px;
   margin: 30px 0 20px 0;
-  background-image: linear-gradient(to right, #3b62f1,#5972cd, rgb(119, 138, 209));
+  background-image: linear-gradient(to right, #3b62f1,#5972cd, rgb(119, 134, 209));
   user-select: none;
 }
 .blue-gradul-button:hover{
   background-image: linear-gradient(to right, #3152d7,#4a5fb3, #6671a4);
+}
+.border-shadow{
+  box-shadow: 4px 7px 7px rgba(196, 196, 196, 0.5),
+      -1px -1px 1px rgba(222, 222, 222, 0.5),
+      4px -2px 2px rgba(219, 219, 219, 0.5),
+      -2px 2px 2px rgba(230, 230, 230, 0.5);
 }
 .custom-input{
   display: flex;
@@ -54,6 +60,7 @@ html,body{
     margin: 0;
     border-radius: 10px;
     border: 1px solid #ffffff;
+    background-color: #F5F5F6;
     box-sizing: border-box;
   }
   input:focus{
@@ -85,7 +92,7 @@ nav {
     color: #2c3e50;
 
     &.router-link-exact-active {
-      color: #42b983;
+      color: #42b943;
     }
   }
 }

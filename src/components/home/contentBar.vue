@@ -176,7 +176,7 @@ export default {
       -2px 2px 2px rgba(230, 230, 230, 0.5);
       padding: 5px;
       border-radius: 10px;
-      transition: all 0.5s;
+      transition: all 0.2s;
       .sub-file{
         font-size: 14px;
         position: relative;
@@ -197,11 +197,10 @@ export default {
       width: 25%;
       .upload{
         user-select: none;
-        margin-left: -10px;
         background-image: url(@/assets/home/add2.png);
         height: 30px;
         width: 30px;
-        background-size: cover;
+        background-size:contain;
       }
       .upload:hover{
         background-image: url(@/assets/home/add3.png);
