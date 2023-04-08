@@ -5,6 +5,7 @@ export default createStore({
     pathMap:{
       files:{ 
         title:'文件',
+        checkLength:0,
         stack:[
           {
             name:'测试文件夹0',
@@ -34,6 +35,7 @@ export default createStore({
       },
       favorite:{
         title:'收藏夹',
+        checkLength:0,
         stack:[
           {
             name:'测试文件夹0',
@@ -56,12 +58,13 @@ export default createStore({
       },
       recycle:{
         title:'回收站',
+        checkLength:0,
         stack:[
           {
             name:'测试文件夹-1',
             modifier:'RCUzQSU1QyV1NUJBMyV1NEYyMA==11'
           }, 
-          { 
+          {  
             name:'测试文件夹0',
             modifier:'RCUzQSU1QyV1NUJBMyV1NEYyMA=='
           }, 
@@ -84,95 +87,95 @@ export default createStore({
         ],
         fileList:[
           {
-            name:'tools',
+            name:'数据.excel',
             modifier:'RCUzQSU1QyV1NUJBMyV11212NadA1234==',
-            status:0, 
-            type:'directory',
+            state:0, 
+            type:'xlsx',
             time:'2023/4/3'
           },
           {
-            name:'tools',
+            name:'测试.zip',
             modifier:'RCUzQSU1QyV1NUJBMyV11212N141123adA4==',
-            status:0, 
-            type:'directory',
+            state:0, 
+            type:'zip',
             time:'2023/4/3'
             
           },
           {
-            name:'tools',
+            name:'uuu.js',
             modifier:'RCUzQSU1QyV1N5131UJBMyV11211442NadA4==',
-            status:0, 
-            type:'directory',
+            state:0,  
+            type:'js',
             time:'2023/4/3'
           },
           {
-            name:'tools',
+            name:'学习资料.rar',
             modifier:'RCU123zQSU1QyV1NUJBM1231yV11212NadA4==',
-            status:0, 
-            type:'directory',
+            state:0, 
+            type:'rar',
             time:'2023/4/3'
           },
           {
-            name:'tools',
+            name:'说明书.pdf',
             modifier:'RCUzQSU1QyV1NUJBM1231yV11211132NadA4==',
-            status:0, 
-            type:'directory',
+            state:0, 
+            type:'pdf',
+            time:'2023/4/3'
+          },
+          {
+            name:'音乐.ogg',
+            modifier:'RCUzQSU1QyV1NUJBM1231yV111212NadA134==',
+            state:0, 
+            type:'ogg',
             time:'2023/4/3'
           },
           {
             name:'tools',
             modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
-            status:0, 
+            state:0, 
             type:'directory',
             time:'2023/4/3'
           },
           {
-            name:'tools',
-            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
-            status:0, 
-            type:'directory',
-            time:'2023/4/3'
-          },
-          {
-            name:'tools',
-            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
-            status:0, 
-            type:'directory',
+            name:'资料.doc',
+            modifier:'RCUz11QSU1QyV1NUJBM1231yV11212NadA134==',
+            state:0, 
+            type:'doc',
             time:'2023/4/3'
           }, 
           { 
             name:'tools',
-            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
-            status:0, 
-            type:'directory',
+            modifier:'RCUz31QSU1QyV1NUJBM1231yV11212NadA134==',
+            state:0, 
+            type:'',
             time:'2023/4/3'
           },
           {
-            name:'tools',
-            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
-            status:0, 
-            type:'directory',
+            name:'嘘唏.ppt',
+            modifier:'RC4aUzQSU1QyV1NUJBM1231yV11212NadA134==',
+            state:0, 
+            type:'ppt',
             time:'2023/4/3'
           },
           {
-            name:'tools',
-            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
-            status:0, 
-            type:'directory',
+            name:'网站.html',
+            modifier:'RCasdaUzQSU1QyV1NUJBM1231yV11212NadA134==',
+            state:0, 
+            type:'html',
             time:'2023/4/3'
           },
           {
-            name:'tools',
-            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
-            status:0, 
-            type:'directory',
+            name:'tools.jar',
+            modifier:'RCUzQSU1QyV1NUfaJBM1231yV11212NadA134==',
+            state:0, 
+            type:'jar',
             time:'2023/4/3'
-          },
+          },  
           {
-            name:'哈哈哈哈234',
-            modifier:'RCUzQSU1QyV1NUJBM1231yV11212NadA134==',
-            status:0, 
-            type:'directory',
+            name:'哈哈哈哈234.mkv',
+            modifier:'RCUzasdaQSU1QyV1NUJBM1231yV11212NadA134==',
+            state:0, 
+            type:'mkv',
             time:'2023/4/3'
           },
         ],
@@ -180,6 +183,7 @@ export default createStore({
       },
       lock:{
         title:'密码箱',
+        checkLength:0,
         stack:[
           {
             name:'测试文件夹0',
@@ -205,7 +209,7 @@ export default createStore({
   getters: {
 
   },
-  mutations: {
+  mutations: { 
     /**
      * 跳转到当前路径栈前面的一个路径,不可以跳转当前路径
      * @param {*} state 内容库
@@ -241,13 +245,18 @@ export default createStore({
      * vue视图层完成视图渲染,通知持久化数据更改为不需要渲染
      * @param {*} state 内容
      * @param {*} params 参数对象,{title:表示要跳转的是哪个模块的路径}
-     */
+     */  
     finishedFresh(state,params){
       state.pathMap[params.title].needFresh = false
     },
     clearPath(state,title){
-      state.pathMap[title].stack = []
+      state.pathMap[title].stack = [] 
       state.pathMap[title].needFresh = true
+    },
+    changeFileState(state,params){
+      state.pathMap[params.title].fileList[params.index].state = params.state
+      state.pathMap[params.title].checkLength+=params.state===1?1:-1
+      console.log(state.pathMap[params.title].checkLength)
     }
   }, 
   actions: { 
