@@ -1,5 +1,6 @@
 <template>
-  <div class="home-container">
+  <SubWindow v-if="showMove"></SubWindow>
+  <div :class="'home-container '+(showMove?'invalid':'')">
 
     <!-- 左侧功能栏的顶部选择部分 -->
     <div class="left-content">
@@ -46,8 +47,15 @@
 </template>
 
 <script>
-
+import {mapState} from 'vuex'
+import SubWindow from '@/components/universal/moveWindow.vue'
 export default {
+  components:{
+    SubWindow
+  },
+  computed:{
+    ...mapState(['showMove'])
+  },
   data(){
     return {
       userInfo:{
@@ -80,7 +88,7 @@ export default {
           icon:require('@/assets/lock.png')
 
         },
-      ],
+      ],  
       extension:[
         {
           name:'传输列表',
@@ -99,6 +107,17 @@ export default {
 </script>
 
 <style lang="less" scoped>
+.invalid{
+  -webkit-filter: grayscale(100%);
+  -moz-filter: grayscale(100%);
+  -ms-filter: grayscale(100%);
+  -o-filter: grayscale(100%);
+  filter: grayscale(100%);
+  filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#grayscale"); 
+  filter: progid:DXImageTransform.Microsoft.BasicImage(grayscale=1);
+  pointer-events:none
+}
+
 .home-container{
     height: 100%;
     width: 100%;

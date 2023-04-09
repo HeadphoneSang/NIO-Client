@@ -5,15 +5,15 @@
         <input type="checkbox" id="checkAll">
         <label for="checkAll">共{{ pathMap[title].fileList.length }}个</label>
     </div>
-    <div class="files-container">
-        <FileItem :item="item" v-for="(item,index) in pathMap[title].fileList" :key="index" :press-shirft="pressShirft" :pressCtrl="pressCtrl" :index="index" :father-ttitle="title"></FileItem>
+    <div class="files-container"> 
+        <FileItem :item="item" v-for="(item,index) in pathMap[title].fileList" :key="index" :press-shirft="pressShirft" :pressCtrl="pressCtrl" :index="index" :father-ttitle="title" @selectMore="onSelectMore"></FileItem>
     </div>
     <div :class="showMenu?'showSub border-shadow':'hiddenSub'" id="main" :style="{left:mouseX+'px',top:mouseY+'px'}">
         <div class="func-container" @click.stop="clickMenu('createDir')">新建文件夹</div>
         <div class="func-container" @click.stop="clickMenu('upload')">上传文件</div>
         <div class="func-container" @click.stop="clickMenu('refresh')">刷新页面</div>
     </div>
-    
+    <DownloadBar :title="title" v-if="pathMap[title].checkLength>1"></DownloadBar>
     <Message :message="msgContent" :title="msgTitle" :x="20" :y="20" ref="msg"></Message>
   </div>
 </template>
@@ -22,6 +22,8 @@
 import {mapMutations,mapState} from 'vuex'
 import FileItem from '@/components/home/fileItem.vue'
 import Message from '@/components/universal/messageBar.vue'
+import DownloadBar from '@/components/home/downloadBar.vue'
+
 export default {
     props:{
         title:{
@@ -39,7 +41,7 @@ export default {
         }
     },
     components:{
-        FileItem,Message
+        FileItem,Message,DownloadBar
     },
     computed:{
         ...mapState(['pathMap'])
@@ -54,6 +56,8 @@ export default {
             pressCtrl:false,
             pressShirft:false,
             press:false,
+            bIndex:-1,
+            eIndex:-1,
             unshow:(e)=>{
             if (e.target.id!=='main') {
                     this.showMenu =false
@@ -61,28 +65,32 @@ export default {
                 }
             },
             keyDown:(e)=>{
+                
                 if(this.press)
                     return
                 this.press = true
                 if(e.key==='Control'){
                     this.pressCtrl = true
+                }else if(e.key==='Shift'){
+                    this.pressShirft = true
                 }
             },
-            keyUp:(e)=>{
+            keyUp:()=>{
                 if(!this.press)
                     return
                 this.press = false
                 this.pressCtrl = false
                 this.pressShirft = false
+                this.bIndex = this.eIndex = -1
             }   
         }
     },
     methods:{
+        ...mapMutations(['checkInRange']),
         clickBody(e){
             this.mouseX = e.pageX
             this.mouseY = e.pageY
             this.showMenu = true
-            console.log(1)
         },
         clickMenu(func){
             switch(func){
@@ -101,6 +109,17 @@ export default {
             this.msgContent = msg
             this.msgTitle = title
             this.$refs[boxName].show = true
+        },
+        onSelectMore(newIndex){
+            this.bIndex = this.eIndex
+            this.eIndex = newIndex
+            if(!this.pressShirft||this.bIndex==-1||this.eIndex==this.bIndex)
+                return
+            this.checkInRange({
+                title:this.title,
+                bIndex:Math.min(this.bIndex,this.eIndex),
+                eIndex:Math.max(this.bIndex,this.eIndex)
+            })
         }
     },
     created(){

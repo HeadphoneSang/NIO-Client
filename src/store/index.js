@@ -2,6 +2,37 @@ import { createStore } from 'vuex'
 
 export default createStore({
   state: {
+    nowPage:'文件',
+    showMove:true,
+    miniPathMap:{
+      content:[
+        {
+          name:'测试文件夹0',
+          modifier:'RCUzQSU1QyV1NUJBMyV1NEYyMA=='
+        },
+        {  
+          name:'测试文件夹1',
+          modifier:'RCUzQSU1QyV1NUJBMyV1NadA==' 
+        },   
+        {
+          name:'测试文件夹2',
+          modifier:'RCUzQSU1QyV1NUJBMyV1Nad1=='
+        },
+        { 
+          name:'测试文件夹6', 
+          modifier:'RCUzQSU1Q123yV1NUJBMyV1NadA4=='
+        },
+        {
+          name:'测试文件夹7',
+          modifier:'RCUzQSU1QyV1NUJBMy123V1NadA4=='
+        },
+        {
+          name:'测试文件夹9',
+          modifier:'RCUzQS123U1QyV1NUJBMyV1NadA4=='
+        },
+      ],
+      needFresh:false
+    },
     pathMap:{
       files:{ 
         title:'文件',
@@ -27,8 +58,11 @@ export default createStore({
         ],
         fileList:[
           {
-            name:'tools',
-            modifier:'RCUzQSU1QyV1NUJBMyV11212NadA4=='
+            name:'数据.excel',
+            modifier:'RCUzQSU1QyV1NUJBMyV11212NadA1234==',
+            state:0, 
+            type:'xlsx',
+            time:'2023/4/3'
           },
         ],
         needFresh:false
@@ -36,6 +70,15 @@ export default createStore({
       favorite:{
         title:'收藏夹',
         checkLength:0,
+        fileList:[
+          {
+            name:'老师视频学习资料.zip',
+            modifier:'RCUzQSU1QyV1NUJBMyV11212NadA1234==',
+            state:0, 
+            type:'zip',
+            time:'2023/4/3'
+          },
+        ],
         stack:[
           {
             name:'测试文件夹0',
@@ -164,7 +207,7 @@ export default createStore({
             type:'html',
             time:'2023/4/3'
           },
-          {
+          { 
             name:'tools.jar',
             modifier:'RCUzQSU1QyV1NUfaJBM1231yV11212NadA134==',
             state:0, 
@@ -181,7 +224,7 @@ export default createStore({
         ],
         needFresh:false
       },
-      lock:{
+      lock:{ 
         title:'密码箱',
         checkLength:0,
         stack:[
@@ -201,6 +244,15 @@ export default createStore({
             name:'测试文件夹3',
             modifier:'RCUzQSU1QyV1NUJBMyV1NadA4=='
           }, 
+        ],
+        fileList:[
+          {
+            name:'秘密文件.log',
+            modifier:'RCUzQSU1QyV1NUJBMyV11212NadA1234==',
+            state:0, 
+            type:'log',
+            time:'2023/4/3'
+          },
         ],
         needFresh:false
       },
@@ -256,7 +308,37 @@ export default createStore({
     changeFileState(state,params){
       state.pathMap[params.title].fileList[params.index].state = params.state
       state.pathMap[params.title].checkLength+=params.state===1?1:-1
-      console.log(state.pathMap[params.title].checkLength)
+    },
+    checkInRange(state,params){
+      for(let i = params.bIndex;i<=params.eIndex;i++){
+        if(state.pathMap[params.title].fileList[i].state===0)
+          state.pathMap[params.title].checkLength+=1
+        state.pathMap[params.title].fileList[i].state=1
+        
+      } 
+    },
+    switchMiniPrePath(state,params){
+      let modifier = params.modifier//要跳转的之前的目录的修饰符
+      let stack = state.miniPathMap.content
+      let findItem = ''
+      do{
+        stack.pop()
+        findItem = stack[stack.length-1]
+      }while(stack.length>0&&findItem.modifier!==modifier)
+      state.miniPathMap.needFresh = true//更新这个模块的状态为需要更新,让vue监听器察觉并更新内容
+    }, 
+    finishedMiniFresh(state){
+      state.miniPathMap.needFresh = false
+    },
+    clearMiniPath(state){
+      state.miniPathMap.content = [] 
+      state.miniPathMap.needFresh = true
+    },
+    showSubWindow(state){
+      state.showMove = true
+    },
+    hiddenSubWindow(state){
+      state.showMove = false
     }
   }, 
   actions: { 
