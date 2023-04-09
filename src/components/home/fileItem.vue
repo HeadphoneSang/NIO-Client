@@ -22,7 +22,7 @@
 </template>
 
 <script>
-import {mapMutations} from 'vuex'
+import {mapMutations,mapState} from 'vuex'
 export default {
     props:{
         item:{
@@ -42,25 +42,34 @@ export default {
             type:String
         }
     },
+    computed:{
+        ...mapState(['showMove'])
+    },
     data(){
         return {
             ico:'',
-            nameLength:10,
+            nameLength:8,
             hover:false,
             showSub:false,
             flag:this.item.modifier+'b',
             unshow:(e)=>{
+                if(this.showMove){
+                    return
+                }
                 if (e.target.id!==this.item.modifier) {
                     this.showSub =false
                 }
-                if(this.pressCtrl)
+                if(this.pressCtrl||(e.target.attributes['free']!==undefined))
                     return 
-                if(e.target.attributes['flag']===undefined&&this.item.state===1)
-                    return this.changeFileState({
-                        state:0,
-                        title:this.fatherTtitle,
-                        index:this.index
-                    })
+                if(e.target.attributes['flag']===undefined)
+                    if(this.pressShirft)
+                        return
+                    else if(this.item.state===1)
+                        return this.changeFileState({
+                            state:0,
+                            title:this.fatherTtitle,
+                            index:this.index
+                        })
                 if(this.item.state===1&&e.target.attributes['flag'].value!==this.flag)
                 {
                     return this.changeFileState({
@@ -69,6 +78,7 @@ export default {
                         index:this.index
                     }) 
                 }
+                
             }
         }
     },
@@ -84,6 +94,7 @@ export default {
                 title:this.fatherTtitle,
                 index:this.index
             })
+            this.$emit('selectMore',this.index)
         },
         clickSubItem(func){
             switch(func){
@@ -168,7 +179,11 @@ export default {
             border-radius: 20px;
         }
         .checked{
-            background-color: #f2f2f2;
+            background-color: #d3e6fd;
+            border-radius: 20px;
+        }
+        .checked:hover{
+            background-color: #d3e6fd;
             border-radius: 20px;
         }
         .out-container{
