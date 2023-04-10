@@ -3,7 +3,7 @@ import { createStore } from 'vuex'
 export default createStore({
   state: {
     nowPage:'文件',
-    showMove:true,
+    showMove:false,
     miniPathMap:{
       content:[
         {
@@ -29,6 +29,78 @@ export default createStore({
         {
           name:'测试文件夹9',
           modifier:'RCUzQS123U1QyV1NUJBMyV1NadA4=='
+        },
+      ],
+      files:[
+        {
+          name:'测试.zip',
+          modifier:'RCUzQSU1QyV1NUJBMyV11212N141123adA4==',
+          state:0, 
+          type:'zip',
+          time:'2023/4/3'
+        },
+        {
+          name:'数据12312包目录',
+          modifier:'RCUzQS12312U1QyV54、1NUJBM1231yV11211132NadA4==',
+          state:0, 
+          type:'directory',
+          time:'2023/4/3'
+        },
+        {
+          name:'uuu.js',
+          modifier:'RCUzQSU1QyV1N5131UJBMyV11211442NadA4==',
+          state:0,  
+          type:'js',
+          time:'2023/4/3'
+        },
+        {
+          name:'学习资料.rar',
+          modifier:'RCU123zQSU1QyV1NUJBM1231yV11212NadA4==',
+          state:0, 
+          type:'rar',
+          time:'2023/4/3'
+        },
+        {
+          name:'说明书.pdf',
+          modifier:'RCUzQSU1QyV1NUJBM1231yV11211132NadA4==',
+          state:0, 
+          type:'pdf',
+          time:'2023/4/3'
+        },
+        {
+          name:'数据包目录',
+          modifier:'RCUzQSU1QyV54、1NUJBM1231yV11211132NadA4==',
+          state:0, 
+          type:'directory',
+          time:'2023/4/3'
+        },
+        {
+          name:'学习资料.rar',
+          modifier:'RCU123zQSU1QyV1NUJBM1231yV11212NadA4==',
+          state:0, 
+          type:'rar',
+          time:'2023/4/3'
+        },
+        {
+          name:'说明书.pdf',
+          modifier:'RCUzQSU1QyV1NUJBM1231yV11211132NadA4==',
+          state:0, 
+          type:'pdf',
+          time:'2023/4/3'
+        },
+        {
+          name:'数据包目录',
+          modifier:'RCUzQSU1QyV54、1NUJBM1231yV11211132NadA4==',
+          state:0, 
+          type:'directory',
+          time:'2023/4/3'
+        },
+        {
+          name:'说明书',
+          modifier:'RCUz1231QSU1QyV1NUJBM1231yV11211132NadA4==',
+          state:0, 
+          type:'directory',
+          time:'2023/4/3'
         },
       ],
       needFresh:false
@@ -339,6 +411,27 @@ export default createStore({
     },
     hiddenSubWindow(state){
       state.showMove = false
+    },
+    /**
+     * 将文件排序,将目录排序到前方,双指针时间复杂度O(n)
+     * @param {*} state 
+     */
+    priorityDir(state){
+      let arr = state.miniPathMap.files
+      let l=0,r = arr.length-1
+      while(l<r){
+        while(l<r&&arr[l].type==='directory'){
+          l++;
+        }
+        while(r>l&&arr[r].type!=='directory'){
+          r--;
+        }
+        if(l>=r)
+          break
+        let temp = arr[l]
+        arr[l] = arr[r]
+        arr[r] = temp
+      }
     }
   }, 
   actions: { 
