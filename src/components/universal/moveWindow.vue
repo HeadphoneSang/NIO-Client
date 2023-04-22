@@ -13,7 +13,7 @@
 
     <!-- 路径总览区域 -->
     <div class="files-container">
-        <div :class="item.type==='directory'?'file-item':'file-notallowed'" v-for="(item,index) in miniPathMap.files" :key="index">
+        <div :class="item.type==='directory'?'file-item':'file-notallowed'" v-for="(item,index) in miniPathMap.files" :key="index" @dblclick="clickDir(item)">
             <div class="img-box">
                 <img :src="initIcon(item.type)" >
             </div>
@@ -31,7 +31,7 @@
         </div>
         <div class="right-container">
             <a @click.stop="closeWindow">取消</a>
-            <a @click.stop="">移动到此处</a>
+            <a @click.stop="moveContent">移动到此处</a>
         </div>
     </div>
     <!-- 底部栏 -->
@@ -41,12 +41,59 @@
 <script>
 import MiniPathView from '@/components/universal/miniContentBar.vue'
 import {mapMutations,mapState} from 'vuex'
+import swal from 'sweetalert'
+import bus from '@/views/miniBus.js'
+import bodyBus from '@/views/bodyContentbus.js';
+
 export default {
   components:{
     MiniPathView
   },
+  data(){
+    return {
+        moveQueue:[],
+        title:''
+    }
+  },
   methods:{
-    ...mapMutations(['hiddenSubWindow','priorityDir']),
+    ...mapMutations(['hiddenSubWindow','priorityDir','switchMiniPostPath','setMiniFileList']),
+    async clickDir(item){
+       if(item.type==="directory"){
+        if(this.miniPathMap.moveQueue.some(to=>to.modifier==item.modifier)){
+            swal({
+                title:"危险操作!",
+                text:"不可以将文件夹移动到自己里面\n避免造成无限递归",
+                icon:"error",
+                buttons:{
+                    ok:{
+                        text:"确定"
+                    }
+                }
+            })
+            return;
+        }
+        try{
+            let {data} = await this.$http.get(`/file/getFileListByModifier/${item.modifier}`)
+            if(data.code==200){
+                let list = data.list
+                this.switchMiniPostPath({
+                    pathName:item.name,
+                    modifier:item.modifier
+                })
+                this.setMiniFileList({
+                    fileList:list
+                })
+                this.priorityDir()
+                bus.emit("needFresh",list)
+            }else{
+                swal("文件夹出现内部错误")
+            }
+        }catch(e){
+            console.log(e)
+            swal("网络请求出错")
+        }
+       }
+    },
     closeWindow(){
         this.hiddenSubWindow()
     },
@@ -88,6 +135,69 @@ export default {
         }
         return require('@/assets/typesIcon/invalid.png')
     },
+    async moveContent(){
+        let name = await swal({
+            title:"你确定要移动此文件吗?",
+            text: '移动后源文件会直接转移位置',
+            closeOnClickOutside:false,
+            buttons:{
+                close:{
+                    text: "关闭",
+                    closeModal:true
+                },
+                default:{
+                    text: "移动",
+                    closeModal: false,
+                }
+            }
+        })
+        if(name==="default"){
+            let length = this.miniPathMap.content.length;
+            let modifier = length>0?this.miniPathMap.content[length-1].modifier:""
+            try {
+                let {data} = await this.$http.post("/file/moveAtoB",{
+                        targetModifier:modifier,
+                        moveModifiers:this.miniPathMap.moveQueue.map(item=>item.modifier)
+                    }
+                )
+                if(data.code==200){
+                    swal.close()
+                    swal({
+                      title: "转移成功!",
+                      text: "点击确认按钮退出",
+                      icon: "success",
+                      button: "确认",
+                    });
+                    bodyBus.emit('needFresh',this.miniPathMap.title)
+                }else if(data.code==203){
+                    swal({
+                      title: "转移出现失败流程!",
+                      text: "点击确认按钮退出",
+                      icon: "error",
+                      button: "确认",
+                    });
+                }else{
+                    swal({
+                      title: "转移出错!",
+                      text: `${data.msg}`,
+                      icon: "error",
+                      button: "确认",
+                    });
+                }
+            } catch (error) {
+              swal.close()
+              swal({
+                  title: " 网络连接错误",
+                  icon: "warning",
+                  dangerMode: true,
+                })
+            }
+            
+        }else{
+            swal.close()
+            swal("取消了移动")
+        }
+    }
   },
   computed:{
     ...mapState(['miniPathMap'])

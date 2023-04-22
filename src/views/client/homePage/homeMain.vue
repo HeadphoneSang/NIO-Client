@@ -1,5 +1,5 @@
 <template>
-  <SubWindow v-if="showMove"></SubWindow>
+  <SubWindow v-if="showMove" ></SubWindow>
   <div :class="'home-container '+(showMove?'invalid':'')">
 
     <!-- 左侧功能栏的顶部选择部分 -->
@@ -28,7 +28,7 @@
         <div class="head">
           <img :src="userInfo.head" alt="">
           <div class="nick">
-            {{ userInfo.nick!==''?userInfo.nick:userInfo.account }}
+            {{ userInfo.nick!==''?userInfo.nick:userInfo.username }}
           </div>
         </div>
         <div class="info">
@@ -47,23 +47,19 @@
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import {mapState,mapMutations} from 'vuex'
 import SubWindow from '@/components/universal/moveWindow.vue'
+import {ipcRenderer} from 'electron'
+
 export default {
   components:{
     SubWindow
   },
   computed:{
-    ...mapState(['showMove'])
+    ...mapState(['showMove','userInfo'])
   },
   data(){
     return {
-      userInfo:{
-        nick:'19892332313',
-        account:'32331335333',
-        head:require('@/assets/head.png'),
-        permission:'user'
-      },
       functions:[
         {
           name:'文件',
@@ -101,7 +97,13 @@ export default {
   methods:{
     navToPage(url){
       this.$router.push(url)
-    }
+    },
+    ...mapMutations(['setUser'])
+  },
+  async created(){
+    let data = await ipcRenderer.invoke('loadedHome',"need")
+    this.$http.defaults.baseURL = data[1]
+    this.setUser({username:data[0]})
   }
 }
 </script>

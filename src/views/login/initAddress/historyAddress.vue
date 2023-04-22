@@ -15,21 +15,34 @@
       <!-- 下拉菜单 -->
     </div>
     <div class="place"></div>
-    <div :class="showWarn?'warn-tips':'warn-hidden'" >连接地址不可以为空</div>
+    <div :class="showWarn?'warn-tips':'warn-hidden'" >{{ warnMsg }}</div>
     <div class="select-box">
       <input type="checkbox" id="check" v-model="isRemeber"><label for="check">下次自动连接</label>
     </div>
     <div class="submit-box">
-      <input type="submit" value="连接" @click.prevent="submit">
+      <input type="submit" :class="comfirming?'submit-btn-disable':'submit-btn'" value="连接" @click.prevent="submit">
       <div class="submit-tips">
         点击「登录」表示连接到指定远程文件服务器
       </div>
     </div>
+    <div :class="comfirming?'spinner-border':'spinner-border-hidden'" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
   </div>
+  
 </template>
 
-<script>
+<script> 
+import $ from 'jquery/dist/jquery.js'
+
 export default {
+    watch:{
+      isRemeber:{
+        handler(newValue){
+          window.localStorage.setItem("isRemeber",newValue)
+        }
+      }
+    },
     data(){
       return{
         remoteIcon:'',
@@ -40,7 +53,9 @@ export default {
         remoteAddress:'',
         showWarn:false,
         showSubList:false,
+        comfirming:false,
         showHistory:[],
+        warnMsg:'连接地址不能为空',
         history:[
           {
             ip:'mc.chbcraft.com:88',
@@ -70,29 +85,86 @@ export default {
         this.remoteIcon = this.icon2
         this.showSubList = true
         this.isInputting = true
+        this.onInputChange()
       },
       blurInput(){
         this.remoteIcon = this.icon1
         this.showSubList = false
         this.isInputting = false
         if(this.remoteAddress===''){
+          this.warnMsg = '连接地址不能为空'
           return this.showWarn = true
         }
         this.showWarn = false
       },
       onInputChange(){
-        this.showHistory = this.history.filter(item=>item.ip.startsWith(this.remoteAddress)).slice(0,6)
+        this.showHistory = this.history.filter(item=>item.ip.startsWith(this.remoteAddress)).slice(0,5)
       },
       clickSub(ip){
         this.remoteAddress = ip
       },
-      submit(){
-        this.$router.push('/mainEnter/loginMain')
-      }
+      async submit(){
+        // this.$router.push('/mainEnter/loginMain')
+        // window.localStorage.setItem("test","123123")
+        if(this.remoteAddress==''){
+          this.warnMsg = '连接地址不能为空'
+          this.showWarn = true
+          return
+        }
+        if(this.comfirming)
+          return
+        this.comfirming = true
+        let seq = Math.ceil(Math.random()*10000)
+        try {
+          let ret = await this.$http.get("http://"+this.remoteAddress+"/login/confirm/"+seq)
+          if(ret.status===200){
+            if(ret.data==seq+1)
+            {
+              this.$http.defaults.baseURL = "http://"+this.remoteAddress
+              let has = this.history.find(item=>item.ip==this.remoteAddress)
+              if(has===undefined){
+                this.history = [
+                  {
+                    ip:this.remoteAddress
+                  },
+                  ...this.history
+                ]
+                window.localStorage.setItem("ipHistory",JSON.stringify(this.history.slice(0,5)))
+                
+              }
+              window.localStorage.setItem("ip",this.remoteAddress)
+              this.$router.push('/mainEnter/loginMain')
+            }
+          }else{
+            this.warnMsg = '连接地址不可用,网络请求失败'
+            this.showWarn = true
+          }
+        } catch (error) {
+          this.warnMsg = '连接地址不可用,网络请求失败'
+          this.showWarn = true
+        }finally{
+          this.comfirming = false;
+        }
+      },
     },
-    created(){
+    async created(){
       this.initRes()
-      this.showHistory = this.history.slice(0,6)
+      let isRemeber = window.localStorage.getItem("isRemeber")
+      let history = window.localStorage.getItem("ipHistory")
+      if(history==null)
+        this.history = []
+      else
+        this.history = JSON.parse(history)
+      if(isRemeber!=null){
+        this.isRemeber = isRemeber
+      }
+      if(isRemeber==="true"){
+        let ip = window.localStorage.getItem("ip")
+        if(ip==null)
+          return;
+        this.remoteAddress = ip
+        await this.submit()
+      }
     }
 }
 </script>
@@ -107,7 +179,14 @@ export default {
   .add-container{
     width: 100%;
     position: relative;
-
+    .spinner-border{
+      position: fixed;
+      left: calc(50% - 12px);
+      top: 50%;
+    }
+    .spinner-border-hidden{
+      display: none;
+    }
     .warn-hidden{
       display: none;
     }
@@ -130,7 +209,7 @@ export default {
         font-size: 14px;
         color: #7b7b7b;
       }
-      input[type="submit"]{
+      .submit-btn,.submit-btn-disable{
         border: 0 solid #ffffff;
         background-color: #7690FF;
         color: #ffffff;
@@ -140,10 +219,17 @@ export default {
         width: 100%;
         outline: none;
       }
-      input[type="submit"]:hover{
+      .submit-btn:hover{
         
         background-color: #546fe6;
         transition: all 0.5s;
+      }
+      .submit-btn-disable{
+        background-color: #57618a;
+        cursor:not-allowed;
+      }
+      .submit-btn-disable:hover{
+        
       }
     }
     .select-box{

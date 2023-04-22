@@ -12,10 +12,12 @@
         </div>
         <div :class="showSub?'showSub border-shadow':'hiddenSub'" :id="item.modifier" :flag="flag">
             <div class="func-container" @click.stop="clickSubItem('download')">下载</div>
-            <div class="func-container" @click.stop="clickSubItem('delete')">回收站</div>
-            <div class="func-container" @click.stop="clickSubItem('lock')">密码箱</div>
-            <div class="func-container" @click.stop="clickSubItem('collect')">收藏</div>
-            <div class="func-container" @click.stop="clickSubItem('move')">移动</div>
+            <div class="func-container" @click.stop="clickSubItem('recycle')" v-if="fatherTtitle=='files'||fatherTtitle=='lock'">回收站</div>
+            <div class="func-container" @click.stop="clickSubItem('delete')" v-if="fatherTtitle=='recycle'||fatherTtitle=='files'||fatherTtitle=='lock'">删除</div>
+            <div class="func-container" @click.stop="clickSubItem('lock')" v-if="fatherTtitle=='files'">密码箱</div>
+            <div class="func-container" @click.stop="clickSubItem('collect')" v-if="fatherTtitle=='files'">收藏</div>
+            <div class="func-container" @click.stop="clickSubItem('uncollect')" v-if="fatherTtitle=='favorite'">移除收藏夹</div>
+            <div class="func-container" @click.stop="clickSubItem('move')" v-if="fatherTtitle=='files'||fatherTtitle=='recycle'">移动</div>
         </div>
     </div>
   </div>
@@ -23,7 +25,16 @@
 
 <script>
 import {mapMutations,mapState} from 'vuex'
+import bus from '@/views/bodyContentbus.js';
+import swal from 'sweetalert';
 export default {
+    watch:{
+        "item.type":{
+            handler(){
+                this.initIcon()
+            }
+        }
+    },
     props:{
         item:{
             type:Object,
@@ -43,7 +54,7 @@ export default {
         }
     },
     computed:{
-        ...mapState(['showMove'])
+        ...mapState(['showMove','userInfo'])
     },
     data(){
         return {
@@ -53,6 +64,7 @@ export default {
             showSub:false,
             flag:this.item.modifier+'b',
             unshow:(e)=>{
+                
                 if(this.showMove){
                     return
                 }
@@ -62,8 +74,10 @@ export default {
                 if(this.pressCtrl||(e.target.attributes['free']!==undefined))
                     return 
                 if(e.target.attributes['flag']===undefined)
+                    
                     if(this.pressShirft)
                         return
+                    
                     else if(this.item.state===1)
                         return this.changeFileState({
                             state:0,
@@ -83,7 +97,7 @@ export default {
         }
     },
     methods:{
-        ...mapMutations(['changeFileState']),
+        ...mapMutations(['changeFileState','showSubWindow']),
         clickMenu(){
             console.log('menu:'+this.item.type)
             this.showSub = true
@@ -96,26 +110,199 @@ export default {
             })
             this.$emit('selectMore',this.index)
         },
-        clickSubItem(func){
+        async clickSubItem(func){
             switch(func){
                 case 'download':{
                     break;
                 }
+                case 'recycle':{
+                    this.recycleItem()
+                    break;
+                }
                 case 'delete':{
+                    await this.delete()
                     break;
                 }
                 case 'lock':{
                     break;
                 }
                 case 'collect':{
+                    await this.collect()
                     break;
                 }
                 case 'move':{
+                    this.moveItem()
+                    break;
+                }
+                case 'uncollect':{
+                    await this.uncollect()
                     break;
                 }
             }
         },
+        async delete(){
+            let res = await swal({
+              title: "你确定要将此文件彻底删除吗?",
+              text: "删除后将无法再次找回",
+              icon: "error",
+              buttons: {
+                false:{
+                    text:'取消'
+                },
+                true:{
+                    text:'确定',
+                    closeModal: false,
+                }
+              },
+              dangerMode: true,
+              closeOnClickOutside:false,
+            })
+            if(res=="true"){
+                try {
+                    let {data} = await this.$http.post("/file/deleteFileByModifiers",[this.item.modifier])
+                    if(data){
+                        swal({
+                            text:"删除成功",
+                            icon:"success"
+                        })
+                    }else{
+                        swal("删除遇到问题,操作终止!")
+                    }
+                } catch (error) {
+                    swal("网络请求出错")
+                }finally{
+                    swal.close()
+                    bus.emit("needFresh",this.fatherTtitle)
+                }
+            }else{
+                swal("操作已取消")
+                swal.close()
+            }
+        }
+        ,
+        async recycleItem(){
+            let res = await swal({
+              title: "你确定要将此文件移入回收站吗?",
+              text: "请再次确认你的选项",
+              icon: require("@/assets/qs.png"),
+              buttons: {
+                false:{
+                    text:'取消'
+                },
+                true:{
+                    text:'确定',
+                    closeModal: false,
+                }
+              },
+              dangerMode: true,
+              closeOnClickOutside:false,
+            })
+            if(res=='true'){
+                try {
+                    let {data} = await this.$http.get(`/file/recycleItem/${this.item.modifier}`)
+                    if(data.code==200){
+                        swal(`成功将: ${this.item.name} 移入回收站`, {
+                            icon: "success",
+                        });
+                        bus.emit("needFresh",this.fatherTtitle)
+                        swal.close()
+                    }else if(data.code==203){
+                        swal("移入回收站出现问题,请检查")
+                        swal.close()
+                    }else{
+                        swal(data.msg)
+                        swal.close()
+                    }
+                } catch (error) {
+                    swal.close()
+                    swal("网络连接出现错误")
+                }
+            }
+        },
+        async moveItem(){
+            try{
+                let {data} = await this.$http.get("/file/getRootFiles") 
+                this.showSubWindow({
+                    list:data,
+                    moveQueue:[this.item],
+                    title:this.fatherTtitle
+                })
+            }catch(e){
+                console.log(e)
+                swal("网络请求出错")
+            }
+        },
+        async uncollect(){
+            let res = await swal({
+              title: "你确定要将此文件从收藏夹中移除吗?",
+              text: "请再次确认你的选项",
+              icon: require("@/assets/qs.png"),
+              buttons: ["取消","确定"],
+              dangerMode: true,
+            })
+            if(res){
+                try{
+                    let {data} = await this.$http.get(`/file/deleteFavoriteRecordByModifier/${this.item.modifier}`)
+                    if(data){
+                        swal(`成功将: ${this.item.name} 从收藏夹中移除`, {
+                            icon: "success",
+                        });
+                        bus.emit("needFresh","favorite")
+                    }else{
+                        swal(`移除失败,可能文件不在收藏夹中`, {
+                            icon: require("@/assets/warn.png"),
+                        });
+                    }
+                }catch(e){
+                    console.log(e)
+                    swal(`网络连接错误`, {
+                            icon: require("@/assets/warn.png"),
+                        });
+                }
+            }
+        },
+        /**
+         * 收藏按钮方法
+         */
+        async collect(){
+            let res = await swal({
+              title: "你确定要将此文件加入收藏夹吗?",
+              text: "请再次确认你的选项",
+              icon: require("@/assets/qs.png"),
+              buttons: ["取消","确定"],
+              dangerMode: true,
+            })
+            if(res){
+                try{
+                    let {data} = await this.$http.post("/file/addFavorites",[{
+                        modifier:this.item.modifier,
+                        name:this.item.name,
+                        type:this.item.type,
+                        username:this.userInfo.username,
+                        time:this.item.time
+                    }])
+                    if(data){
+                        swal(`成功将: ${this.item.name} 添加到收藏夹`, {
+                            icon: "success",
+                        });
+                    }else{
+                        swal(`添加失败,可能已经在收藏夹中`, {
+                            icon: require("@/assets/warn.png"),
+                        });
+                    }
+                }catch(E){
+                    console.log(E)
+                    swal("网络连接失败!", {
+                        icon: require("@/assets/warn.png"),
+                    });
+                }
+                
+            }else{
+                swal("取消了收藏");
+            }
+        },
         initIcon(){
+            
             if(this.item.type.match(/(zip|gz|tar|7z|rar)/)!==null){
                 return this.ico = require('@/assets/typesIcon/zip.png')
             }
@@ -226,7 +413,6 @@ export default {
                 top: 35px;
                 right: -115px;
                 width: 150px;
-                height: 170px;
                 background-color: #ffffff;
                 color: #000000;
                 transition: all 0.2s;

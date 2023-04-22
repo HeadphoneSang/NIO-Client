@@ -26,6 +26,8 @@ export default {
     methods:{
         backServer(){
             if(this.$route.fullPath.indexOf('initAddress')===-1){
+                window.localStorage.removeItem("ip")
+                window.localStorage.setItem("isRemeber",false)
                 this.$router.push('/mainEnter/initAddress/historyAddress')
             }
         }
