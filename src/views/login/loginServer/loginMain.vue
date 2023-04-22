@@ -12,7 +12,13 @@
 </template>
 
 <script>
+
 export default {
+  beforeRouteUpdate(to,from,next){
+    let i = this.pages.findIndex(item=>item.path==to.fullPath)
+    this.pageIndex = i
+    next()
+  },
   data(){
     return{
       pageIndex:0,

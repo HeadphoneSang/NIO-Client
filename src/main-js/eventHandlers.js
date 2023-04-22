@@ -2,9 +2,10 @@
  * 主线程监听模块
  * handlers属性下是对应事件的监听器
  */
-import { ipcMain} from "electron"
+import { ipcMain, ipcRenderer} from "electron"
 import factory from './windowFactory.js'
-
+var username
+var url
 export default {
     handlers:{
         /**
@@ -12,10 +13,12 @@ export default {
          * 跳转页面到应用主页面
          */
         onClickLoginButton(mainWin){
-            ipcMain.handle('clickloginButton',(args,msg)=>{
+            ipcMain.handle('clickloginButton',(e,msg,u)=>{
                 mainWin.hide()
                 let homeWin = factory.createHomeWin()
                 homeWin.load()
+                username = msg
+                url =u
                 homeWin.closeHandler(()=>{
                     homeWin = null;
                     mainWin.show()
@@ -26,12 +29,16 @@ export default {
             ipcMain.handle('clickLogoutButton',(args,msg)=>{
             })
         },
+        onloadedHome(mainWin){
+            ipcMain.handle('loadedHome',(e,msg)=>{
+                return [username,url]
+            })
+        },
         onSwitchedPage(mainWin){
             ipcMain.handle('switchedPage',(args,msg)=>{
                 if(msg=='ok'){
                     mainWin.setSize(800,700)
                     mainWin.center()
-                    
                     mainWin.show()
                     mainWin.reload()
                 }

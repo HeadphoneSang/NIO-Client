@@ -25,6 +25,8 @@
 </template>
 <script>
 import {mapState,mapMutations} from 'vuex'
+import bus from '@/views/bodyContentbus.js';
+import swal from 'sweetalert';
 export default {
   props:{
     title:{
@@ -33,7 +35,7 @@ export default {
     },
   },
   computed:{
-    ...mapState(['pathMap'])
+    ...mapState(['pathMap','userInfo'])
   },
   data(){
     return {
@@ -51,7 +53,7 @@ export default {
     }
   },
   methods:{
-    ...mapMutations(['switchPrePath','finishedFresh','clearPath']),
+    ...mapMutations(['switchPrePath','finishedFresh','clearPath','setFileList','resetCheckLength']),
     /**
      * 点击路径栏的往前路径,更新路径栏,并请求对应目录的内容
      * @param {*} directory 跳转的路径对象
@@ -73,15 +75,71 @@ export default {
     /**
      * 点击路径栏的默认路径,请求对应模块的默认路径内容,并渲染路径模块
      */
-    clickTitle(){
+    async clickTitle(){
       if(this.pathMap[this.title].stack.length===0)
         return
       else{
-        if(!this.getFileList(''))//获取服务器对应的目录内容,获取成功才去渲染
-          return 
+        switch(this.title){
+          case "files":{
+            await this.clickFileTitile()
+            break;
+          }
+          case "favorite":{
+            await this.clickFavoriteTitile()
+            break;
+          }
+          case "recycle":{
+            await this.clickRecycleTitle()
+          }
+        }
         this.clearPath(this.title)
         this.freshView()
       }
+    },
+    async clickRecycleTitle(){
+      let res = await this.$http.get("/file/getRecycleFiles")
+          if(res.status==200){
+              this.setFileList({
+                  title:this.title,
+                  fileList:res.data.list
+              })
+          }
+          else{
+              this.setFileList({
+                  title:this.title,
+                  fileList:[]
+              })
+      }
+    },
+    async clickFileTitile(){
+      if(!await this.getFileList(''))//获取服务器对应的目录内容,获取成功才去渲染
+        {
+          swal("网络连接失败")
+          return;
+        }
+    },
+    async clickFavoriteTitile(){
+      this.getDefaultFavorite()
+    },
+    async getDefaultFavorite(){
+        try{
+          let res = await this.$http.get("/file/getFavoriteListByUsername/"+this.userInfo.username)
+          if(res.status==200){
+              this.setFileList({
+                  title:this.title,
+                  fileList:res.data.list
+              })
+          }
+          else{
+              this.setFileList({
+                  title:this.title,
+                  fileList:[]
+              })
+            }  
+        }catch(e){
+          console.log(e)
+          swal("网络连接错误")
+        }
     },
     /**
      * 检查点击的往前路径是否可用,如果是当前路径,就不可用
@@ -97,10 +155,28 @@ export default {
     },
     //获得对应目录的文件列表
     async getFileList(modifier){
-      if(modifier===''){//点击标题
-
+      try{
+        let res = await this.$http.get(`/file/getFileListByModifier/${modifier}`)
+        if(res.status==200){
+          let data = res.data
+          if(data.code==200){
+            this.setFileList({
+              title:this.title,
+              fileList:res.data.list
+            })
+            return true
+          }else{
+            swal(data.msg)
+            return false
+          }
+        }else{
+          swal("读取文件内容失败!")
+          return false
+        }
+      }catch(e){
+        swal("读取文件内容失败!")
+        return false
       }
-      return true
     },
     /**
      * 初始化数据
@@ -108,15 +184,30 @@ export default {
     initData(){
       this.itemList = this.pathMap[this.title].stack.slice(0)
       //浅复制一份文件路径数据
+      
     },
     clickMore(){
       this.showSubContent= !this.showSubContent
     },
     clickMoreItem(item){
-      alert(1)
-    }
+
+    } 
   },created(){
     this.initData()
+    bus.on("updateDataEvent",async (params) => {
+      if(params.title===this.title){
+        let res = await this.getFileList(params.modifier)
+        if(res){
+          this.freshView()
+          this.resetCheckLength({title:this.title})
+        }
+        else
+          this.switchPrePath({
+            title:this.title,
+            modifier:modifier
+          })
+        }
+    })
     
   },mounted(){
       document.addEventListener('click', this.unshow,true)  

@@ -11,6 +11,7 @@ html,body{
 .cursor-pointer{
   cursor: url('@/assets/point.png'), pointer;
 }
+
 .blue-gradul-button{
 
   box-sizing: border-box;
@@ -25,13 +26,23 @@ html,body{
 .blue-gradul-button:hover{
   background-image: linear-gradient(to right, #3152d7,#4a5fb3, #6671a4);
 }
+.button-disable{
+  background-color: #4a4c4d;
+  background-image: none;
+  cursor: not-allowed;
+}
+.button-disable:hover{
+  background-color: #4a4c4d;
+  background-image: none;
+  cursor: not-allowed;
+}
 .border-shadow{
   box-shadow: 4px 7px 7px rgba(196, 196, 196, 0.5),
       -1px -1px 1px rgba(222, 222, 222, 0.5),
       4px -2px 2px rgba(219, 219, 219, 0.5),
       -2px 2px 2px rgba(230, 230, 230, 0.5);
 }
-.custom-input{
+.custom-input,.custom-input-warn{
   display: flex;
   width: 90%;
   position: relative;
@@ -73,6 +84,20 @@ html,body{
   .warn-input:focus{
     border: 1px solid #e33535;
 
+  }
+}
+.custom-input-warn{
+  input{
+    border: 1px solid #ff0000;
+    transition: all 0.5s;
+      box-shadow: 2px 2px 5px rgba(169, 169, 169, 0.5),
+        -2px -2px 5px rgba(169, 169, 169, 0.5),
+        2px -2px 5px rgba(169, 169, 169, 0.5),
+        -2px 2px 5px rgba(169, 169, 169, 0.5);
+  }
+  input:focus{
+    background-color: #ffffff;
+    border: 1px solid #ff0000;
   }
 }
 #app {

@@ -25,6 +25,9 @@
 </template>
 <script>
 import {mapState,mapMutations} from 'vuex'
+import bus from '@/views/miniBus.js'
+import swal from 'sweetalert'
+
 export default {
   computed:{
     ...mapState(['nowPage','miniPathMap'])
@@ -45,7 +48,7 @@ export default {
     }
   },
   methods:{
-    ...mapMutations(['switchMiniPrePath','finishedMiniFresh','clearMiniPath']),
+    ...mapMutations(['switchMiniPrePath','finishedMiniFresh','clearMiniPath','setMiniFileList','priorityDir']),
     /**
      * 点击路径栏的往前路径,更新路径栏,并请求对应目录的内容
      * @param {*} directory 跳转的路径对象
@@ -89,7 +92,31 @@ export default {
     //获得对应目录的文件列表
     async getFileList(modifier){
       if(modifier===''){//点击标题
-
+        try{
+          let {data} = await this.$http.get("/file/getRootFiles")
+          this.setMiniFileList({
+            fileList:data
+          })
+          this.priorityDir()
+        }catch(E){
+          console.log(E)
+          swal("网络请求出错")
+        }
+      }else{
+        try{
+          let {data} = await this.$http.get(`/file/getFileListByModifier/${modifier}`)
+          if(data.code==200){
+            this.setMiniFileList({
+              fileList:data.list
+            })
+            this.priorityDir()
+          }else{
+            swal(data.msg)
+          }
+        }catch(e){
+          console.log(e)
+          swal("网络请求出错")
+        }
       }
       return true
     },
@@ -108,7 +135,9 @@ export default {
     }
   },created(){
     this.initData()
-    
+    bus.on("needFresh",()=>{
+      this.freshView()
+    })
   },mounted(){
       document.addEventListener('click', this.unshow,true)  
   },

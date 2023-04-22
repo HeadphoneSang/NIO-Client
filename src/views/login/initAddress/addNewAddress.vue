@@ -4,15 +4,18 @@
       <label for="remote-box"><img :src="remoteIcon" alt=""></label>
       <input type="text" id="remote-box" :class="showWarn?'input-warn':'input-none'" placeholder="输入远程地址" @focus="focusInput" @blur="blurInput" v-model="remoteAddress">
     </div>
-    <div :class="showWarn?'warn-tips':'warn-hidden'" >连接地址不可以为空</div>
+    <div :class="showWarn?'warn-tips':'warn-hidden'" >{{ warnMsg }}</div>
     <div class="select-box">
       <input type="checkbox" id="check" v-model="isRemeber"><label for="check">记录地址</label>
     </div>
     <div class="submit-box">
-      <input type="submit" value="连接" @click.prevent="">
+      <input type="submit" value="连接" :class="confirming?'submit-btn-disable':'submit-btn'" @click.prevent="submit()">
       <div class="submit-tips">
         点击「登录」表示连接到指定远程文件服务器
       </div>
+    </div>
+    <div :class="confirming?'spinner-border':'spinner-border-hidden'" role="status">
+      <span class="sr-only">Loading...</span>
     </div>
   </div>
 </template>
@@ -27,7 +30,9 @@ export default {
         icon2:require('@/assets/remote1.png'),
         isRemeber:false,
         remoteAddress:'',
-        showWarn:false
+        showWarn:false,
+        warnMsg:'连接地址不能为空',
+        confirming:false
       }
     },
     methods:{
@@ -40,9 +45,59 @@ export default {
       blurInput(){
         this.remoteIcon = this.icon1
         if(this.remoteAddress===''){
+          this.showWarn = '连接地址不能为空'
           return this.showWarn = true
         }
         this.showWarn = false
+      },
+      async submit(){
+        if(this.remoteAddress==''){
+          this.showWarn = '连接地址不能为空'
+          return this.showWarn = true
+        }
+        if(this.confirming)
+          return
+        this.confirming = true
+        let seq = Math.ceil(Math.random()*10000)
+        try {
+          let ret = await this.$http.get("http://"+this.remoteAddress+"/login/confirm/"+seq)
+          if(ret.status===200){
+            if(ret.data==seq+1)
+            {
+              
+              this.$http.defaults.baseURL = "http://"+this.remoteAddress
+              if(this.isRemeber){
+                let str = window.localStorage.getItem("ipHistory")
+                let has = false
+                let history = []
+                if(str!=null){
+                  history = JSON.parse(str)
+                  has = history.find(item=>item.ip==this.remoteAddress)
+                }
+                if(has===undefined||has==false){
+                  history = [
+                    {
+                      ip:this.remoteAddress
+                    },
+                    ...history
+                  ]
+                  window.localStorage.setItem("ipHistory",JSON.stringify(history.slice(0,5)))
+                }
+                window.localStorage.setItem("ip",this.remoteAddress)
+              }
+              return this.$router.push('/mainEnter/loginMain')
+            }
+          }else{
+            this.warnMsg = '连接地址不可用,网络请求失败'
+            this.showWarn = true
+          }
+        } catch (error) {
+          this.warnMsg = '连接地址不可用,网络请求失败'
+          this.showWarn = true
+          console.log(error)
+        }finally{
+          this.confirming = false;
+        }
       }
     },
     created(){
@@ -60,6 +115,12 @@ export default {
     }
   .add-container{
     width: 100%;
+    .spinner-border{
+      position: fixed;
+      left: calc(50% - 12px);
+      top: 50%;
+      z-index: 99;
+    }
     .warn-hidden{
       display: none;
     }
@@ -81,7 +142,7 @@ export default {
         font-size: 14px;
         color: #7b7b7b;
       }
-      input[type="submit"]{
+      .submit-btn,.submit-btn-disable{
         border: 0 solid #ffffff;
         background-color: #7690FF;
         color: #ffffff;
@@ -91,9 +152,14 @@ export default {
         width: 100%;
         outline: none;
       }
-      input[type="submit"]:hover{
+      .submit-btn:hover{
+        
         background-color: #546fe6;
         transition: all 0.5s;
+      }
+      .submit-btn-disable{
+        background-color: #57618a;
+        cursor:not-allowed;
       }
     }
     .select-box{

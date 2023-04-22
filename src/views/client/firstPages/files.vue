@@ -8,10 +8,20 @@
 <script>
 import ContentBar from '@/components/home/contentBar.vue'
 import homeBody from '@/components/home/homeBody.vue';
+import {mapMutations,mapState} from 'vuex'
+
 export default {
   components:{
     ContentBar,
     homeBody
+  }
+  ,
+    computed:{
+        ...mapState(['pathMap'])
+    },
+  methods:{
+    ...mapMutations(['checkInRange','setFileList']),
+    
   }
 }
 </script>
