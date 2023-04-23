@@ -11,7 +11,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
-// Menu.setApplicationMenu(null)
+Menu.setApplicationMenu(null)
 //删除工具栏
 async function createWindow() {
   // Create the browser window.

@@ -96,7 +96,7 @@ export default {
         }
     },
     methods:{
-        ...mapMutations(['checkInRange','setFileList','switchPostPath','pointContent','selectAll']),
+        ...mapMutations(['checkInRange','setFileList','switchPostPath','pointContent','selectAll','priorityFilesDir']),
         onDbClickFile(item){
             if(item.type=="directory"){
                 this.switchPostPath({
@@ -125,7 +125,7 @@ export default {
               content: "input",
             })
             .then(async (value) => {
-                if(value!="")
+                if(value!=null&&value.replace(" ","")!="")
                 {
                     let {data} = await this.$http.get(`/file/createDirByParModifier/${rootModifier}/${value}`)
                     if(data){
@@ -137,7 +137,7 @@ export default {
                     
                 }
                 else
-                    swal(`取消了创建 ${value}`);
+                    swal(`取消了创建`);
             });
         },
         clickMenu(func){
@@ -187,9 +187,27 @@ export default {
                 await this.getDefaultFavorite()
             }else if(this.title=="recycle"){
                 await this.getRecycleList()
+            }else if(this.title=="lock"){
+                await this.getLockList()
             }
             this.pointContent({title:this.title})
+            this.priorityFilesDir({title:this.title})
             this.loading = false;
+        },
+        async getLockList(){
+            let res = await this.$http.get("/file/getLockFiles")
+                if(res.status==200){
+                    this.setFileList({
+                        title:this.title,
+                        fileList:res.data.list
+                    })
+                }
+                else{
+                    this.setFileList({
+                        title:this.title,
+                        fileList:[]
+                    })
+            }
         },
         /**
          * 加载默认的文件目录下的文件
@@ -249,8 +267,11 @@ export default {
             }else if(this.title=="files"&&modifier===""){
                 res = await this.$http.get(`/file/getFileListByModifier/${modifier}`)
             }else if(this.title==="recycle"&&modifier===""){
-                res = await this.$http.get(`/file/getRecycleFiles`)
-            }else{
+                res = await this.$http.get("/file/getRecycleFiles")
+            }else if(this.title==="lock"&&modifier===""){
+                res = await this.$http.get("/file/getLockFiles")
+            }
+            else{
                 res = await this.$http.get(`/file/getFileListByModifier/${modifier}`)
             }
             if(res.status==200){
@@ -265,6 +286,7 @@ export default {
                     fileList:[]
                 })
             }
+            this.priorityFilesDir({title:this.title})
             this.loading = false;
         }
     },
@@ -285,6 +307,7 @@ export default {
                 this.clickMenu("refresh")
             }
         })
+
     },
     mounted(){
         document.addEventListener('click', this.unshow,true)  
@@ -295,6 +318,7 @@ export default {
         document.removeEventListener('click', this.unshow, true)
         document.removeEventListener('keydown', this.keyDown, true)
         document.removeEventListener('keyUp', this.keyUp, true)
+        bus.all.clear()
     }
     
 }
@@ -325,6 +349,7 @@ export default {
         }
         .showSub,.hiddenSub{
             display: flex;
+            user-select: none;
             flex-direction: column;
         }
         .hiddenSub{

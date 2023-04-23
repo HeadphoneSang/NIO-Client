@@ -58,6 +58,8 @@ export default {
       try {
         this.loading = true
         let data
+        let url = await ipcRenderer.invoke('readyToLoginEvent')
+        this.$http.defaults.baseURL = url
         data = await this.$http.get(`/login/checkPassword/${this.username}/${this.password}`)
         if(data.status==200){
           if(data.data.code==200){
@@ -66,7 +68,7 @@ export default {
               window.localStorage.setItem("lp",this.$encode(this.password))
             }
             this.autoLogin = false
-            ipcRenderer.invoke('clickloginButton',this.username,this.$http.defaults.baseURL)
+            ipcRenderer.invoke('clickloginButton',this.username)
           }
           else{
             this.warnMsg = data.data.msg

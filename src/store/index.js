@@ -199,6 +199,27 @@ export default createStore({
       }
     },
     /**
+     * 将文件排序,将目录排序到前方,双指针时间复杂度O(n)
+     * @param {*} state 
+     */
+    priorityFilesDir(state,params){
+      let arr = state.pathMap[params.title].fileList
+      let l=0,r = arr.length-1
+      while(l<r){
+        while(l<r&&arr[l].type==='directory'){
+          l++;
+        }
+        while(r>l&&arr[r].type!=='directory'){
+          r--;
+        }
+        if(l>=r)
+          break
+        let temp = arr[l]
+        arr[l] = arr[r]
+        arr[r] = temp
+      }
+    },
+    /**
      * 选中指定模块下的所有文件
      * @param {*} state 
      * @param {*} params 

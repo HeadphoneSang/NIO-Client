@@ -33,7 +33,7 @@
 </template>
 
 <script> 
-import $ from 'jquery/dist/jquery.js'
+import {ipcRenderer} from 'electron'
 
 export default {
     watch:{
@@ -133,6 +133,7 @@ export default {
                 
               }
               window.localStorage.setItem("ip",this.remoteAddress)
+              ipcRenderer.invoke("initAddressEvent",this.$http.defaults.baseURL)
               this.$router.push('/mainEnter/loginMain')
             }
           }else{
