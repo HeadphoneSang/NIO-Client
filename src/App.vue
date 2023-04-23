@@ -6,6 +6,23 @@
 html,body{
   cursor: url('@/assets/download.png'), pointer;
   height: 100%;
+  .swal-modal {
+    border-radius: 20px;
+    img{
+      width:80px;
+      user-select: none;
+    }
+    .swal-title{
+      font-weight: 500;
+      user-select: none;
+    }
+    input{
+      border-radius: 10px;
+    }
+  }
+  .swal-overlay {
+    background-color: rgba(121, 122, 122, 0.45);
+  }
 }
 
 .cursor-pointer{

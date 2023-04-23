@@ -21,6 +21,9 @@
       <div class="upload cursor-pointer">
       </div>
     </div>
+    <div :class="loading?'spinner-border':'spinner-hidden'" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
   </div>
 </template>
 <script>
@@ -40,6 +43,7 @@ export default {
   data(){
     return {
       itemList:[],
+      loading:false,
       max:4,//路径栏最多显示的目录数目
       fileLength:6,
       pathObj:{},
@@ -53,16 +57,25 @@ export default {
     }
   },
   methods:{
-    ...mapMutations(['switchPrePath','finishedFresh','clearPath','setFileList','resetCheckLength']),
+    ...mapMutations(['switchPrePath','finishedFresh','clearPath','setFileList','resetCheckLength','priorityFilesDir']),
     /**
      * 点击路径栏的往前路径,更新路径栏,并请求对应目录的内容
      * @param {*} directory 跳转的路径对象
      */
-    clickPreContent(directory){
-      if(!this.validate(directory))
+    async clickPreContent(directory){
+      if(this.loading)
         return
-      if(!this.getFileList(directory.modifier))//获取服务器对应的目录内容,获取成功才去渲染
+      this.loading = true
+      if(!this.validate(directory)){
+        this.loading = false;
+        return
+      }
+      if(!await this.getFileList(directory.modifier))//获取服务器对应的目录内容,获取成功才去渲染
+      {
+        this.loading = false;  
         return 
+      }
+      this.priorityFilesDir({title:this.title})
       this.switchPrePath({
         title:this.title,
         modifier:directory.modifier
@@ -71,6 +84,7 @@ export default {
       this.finishedFresh({
         title:this.title,
       })
+      this.loading = false
     },
     /**
      * 点击路径栏的默认路径,请求对应模块的默认路径内容,并渲染路径模块
@@ -78,22 +92,45 @@ export default {
     async clickTitle(){
       if(this.pathMap[this.title].stack.length===0)
         return
-      else{
-        switch(this.title){
-          case "files":{
-            await this.clickFileTitile()
-            break;
-          }
-          case "favorite":{
-            await this.clickFavoriteTitile()
-            break;
-          }
-          case "recycle":{
-            await this.clickRecycleTitle()
-          }
+      if(this.loading)
+        return
+      this.loading = true
+      switch(this.title){
+        case "files":{
+          await this.clickFileTitile()
+          break;
         }
-        this.clearPath(this.title)
-        this.freshView()
+        case "favorite":{
+          await this.clickFavoriteTitile()
+          break;
+        }
+        case "recycle":{
+          await this.clickRecycleTitle()
+          break;
+        }
+        case "lock":{
+          await this.clickLockTitle()
+          break;
+        }
+      }
+      this.priorityFilesDir({title:this.title})
+      this.clearPath(this.title)
+      this.freshView()
+      this.loading = false
+    },
+    async clickLockTitle(){
+      let res = await this.$http.get("/file/getLockFiles")
+          if(res.status==200){
+              this.setFileList({
+                  title:this.title,
+                  fileList:res.data.list
+              })
+          }
+          else{
+              this.setFileList({
+                  title:this.title,
+                  fileList:[]
+              })
       }
     },
     async clickRecycleTitle(){
@@ -119,7 +156,7 @@ export default {
         }
     },
     async clickFavoriteTitile(){
-      this.getDefaultFavorite()
+      await this.getDefaultFavorite()
     },
     async getDefaultFavorite(){
         try{
@@ -139,6 +176,8 @@ export default {
         }catch(e){
           console.log(e)
           swal("网络连接错误")
+        }finally{
+          this.priorityFilesDir({title:this.title})
         }
     },
     /**
@@ -195,6 +234,9 @@ export default {
   },created(){
     this.initData()
     bus.on("updateDataEvent",async (params) => {
+      if(this.loading)
+        return;
+      this.loading = true
       if(params.title===this.title){
         let res = await this.getFileList(params.modifier)
         if(res){
@@ -207,6 +249,7 @@ export default {
             modifier:modifier
           })
         }
+        this.loading = false
     })
     
   },mounted(){
@@ -237,6 +280,15 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    .spinner-border{
+        position: fixed;
+        z-index: 999;
+        left: 60%;
+        top: 50%;
+    }
+    .spinner-hidden{
+        display: none;
+    }
     .unshow{
       .sub-file{
         display: none;
@@ -289,9 +341,9 @@ export default {
       .upload{
         user-select: none;
         background-image: url(@/assets/home/add2.png);
-        height: 30px;
-        width: 30px;
-        background-size:contain;
+        height: 35px;
+        width: 35px;
+        background-size:cover;
       }
       .upload:hover{
         background-image: url(@/assets/home/add3.png);

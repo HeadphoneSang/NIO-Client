@@ -155,9 +155,15 @@ export default {
             let length = this.miniPathMap.content.length;
             let modifier = length>0?this.miniPathMap.content[length-1].modifier:""
             try {
-                let {data} = await this.$http.post("/file/moveAtoB",{
-                        targetModifier:modifier,
-                        moveModifiers:this.miniPathMap.moveQueue.map(item=>item.modifier)
+                let {data} = await this.$http.post("/file/moveAtoBItem",{
+                        targetItem:{
+                            modifier:modifier,
+                            name:"",
+                            type:"directory",
+                            state:0,
+                            time:0,
+                        },
+                        moveItems:this.miniPathMap.moveQueue
                     }
                 )
                 if(data.code==200){

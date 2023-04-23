@@ -4,6 +4,9 @@
         <img :src="item.ico" alt="" free="1">
         <div :class="item.show?'name':'name-hidden'" free="1">{{ item.title }}</div>
     </div>
+    <div :class="loading?'spinner-border':'spinner-hidden'" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
   </div>
 </template>
 
@@ -32,10 +35,13 @@ export default {
             item.show = false
         },
         async clickItem(item){
+            if(this.loading)
+                return
+            this.loading = true
             switch(item.title){
                 case '移动':{
-                    if(this.title==="files"||this.title==="recycle"){
-                        this.moveContent()
+                    if(this.title==="files"||this.title==="recycle"||this.title==="lock"){
+                        await this.moveContent()
                     }
                     else
                         swal("此处禁止此操作")
@@ -43,7 +49,7 @@ export default {
                 }
                 case "喜欢":{
                     if(this.title=='files')
-                        this.addFavorites()
+                        await this.addFavorites()
                     else{
                         swal("此处禁止此操作")
                     }
@@ -51,14 +57,14 @@ export default {
                 }
                 case "取消喜欢":{
                     if(this.title=='favorite')
-                        this.deleteFavorites()
+                        await this.deleteFavorites()
                     else
                         swal("此处禁止此操作")
                     break
                 }
                 case "回收站":{
-                    if(this.title=="files"){
-                        this.recycleItems()
+                    if(this.title=="files"||this.title=="lock"){
+                        await this.recycleItems()
                     }else{
                         swal("此处禁止此操作")
                     }
@@ -66,21 +72,92 @@ export default {
                 }
                 case "彻底删除":{
                     if(this.title=="files"||this.title=="recycle"||this.title=="lock"){
-                        this.deleteItems()
+                        await this.deleteItems()
+                    }else{
+                        swal("此处禁止此操作")
+                    }
+                    break;
+                }
+                case "密码箱":{
+                    if(this.title=="files"){
+                        await this.moveToLock()
                     }else{
                         swal("此处禁止此操作")
                     }
                     break;
                 }
             }
+            this.loading = false;
+        },
+        async moveToLock(){
+            let list = this.pathMap[this.title].fileList.filter(item=>item.state===1)
+            let pass = await swal({
+                icon:require("@/assets/pass.png"),
+                title: "请输入密码,来继续操作",
+                content: {
+                  element: "input",
+                  attributes: {
+                    placeholder: "请在此输入密码",
+                    type: "password",
+                  },
+                },
+            })
+            if(pass==null||pass==""){
+                return swal("已取消")
+            }
+            try{
+                let {data} = await this.$http.get(`/file/checkLockBoxPassword/${pass}`)
+                if(data){
+                  swal({
+                    title:"密码正确",
+                    text:"文件转移请稍等...",
+                    closeOnClickOutside:false,
+                    buttons:{
+                        ok:{
+                            text:"退出",
+                            closeModal:false
+                        }
+                    }
+                  })
+                  return await this.moveItemsToLock(list)
+                }
+                swal("密码错误,请联系管理员获得密码")
+            }catch(e){
+                console.log(e)
+                swal("网络请求出错")
+            }
+        },
+        async moveItemsToLock(list){
+            try {
+                let {data} = await this.$http.post('/file/lockItemsByItems',list)
+                if(data.code==200){
+                    swal({
+                        icon:"success",
+                        text:`成功存放到密码箱中`
+                    })
+                    bus.emit("needFresh",this.fatherTtitle)
+
+                }else if(data.code=203){
+                    swal({
+                        icon:"error",
+                        text:"文件转移出现问题?已中断"
+                    })
+                }else{
+                    swal({
+                        icon:"error",
+                        text:"服务器内部出现问题"
+                    })
+                }
+            } catch (error) {
+                swal("网络连接错误")
+            }finally{
+                bus.emit("needFresh",this.title)
+                swal.close()
+            }
         },
         async deleteItems(){
             try {
-                let list = []
-                this.pathMap[this.title].fileList.forEach(item=>{
-                    if(item.state==1)
-                        list.push(item.modifier)
-                })
+                let list = this.pathMap[this.title].fileList.filter(item=>item.state===1)
                 let res = await swal({
                   title: "你确定要将此文件彻底删除吗?",
                   text: "删除后将无法再次找回",
@@ -98,7 +175,7 @@ export default {
                   closeOnClickOutside:false,
                 })
                 if(res=="true"){
-                    let {data} = await this.$http.post("/file/deleteFileByModifiers",list)
+                    let {data} = await this.$http.post("/file/deleteFileByItems",list)
                     if(data){
                         swal({
                             text:"删除成功",
@@ -122,11 +199,7 @@ export default {
         },
         async recycleItems(){
             try {
-                let list = []
-                this.pathMap[this.title].fileList.forEach(item=>{
-                    if(item.state==1)
-                        list.push(item.modifier)
-                })
+                let list = this.pathMap[this.title].fileList.filter(item=>item.state===1)
                 let res = await swal({
                   title: "你确定要将选中文件移入回收站吗?",
                   text: "请再次确认你的选项",
@@ -145,28 +218,27 @@ export default {
                 })
                 if(res=='true'){
                     try {
-                        let {data} = await this.$http.post(`/file/recycleItems`,list)
+                        let {data} = await this.$http.post('/file/recycleItemsByItems',list)
                         if(data.code==200){
                             swal(`成功移入回收站`, {
                                 icon: "success",
                             });
-                            bus.emit("needFresh",this.title)
-                            swal.close()
                         }else if(data.code==203){
                             swal("移入回收站出现问题,请检查")
-                            swal.close()
                         }else{
                             swal(data.msg)
-                            swal.close()
                         }
                     } catch (error) {
-                        swal.close()
                         swal("网络连接出现错误")
                     }
                 }
             } catch (error) {
                 console.log(e)
                 swal("网络请求出错")
+            }finally{
+                bus.emit("needFresh",this.title)
+                swal.close()
+
             }
         },
         async moveContent(){
@@ -219,7 +291,6 @@ export default {
         },
         async addFavorites(){
             let list = this.pathMap[this.title].fileList.filter(item=>(item.username=this.userInfo.username)&&(item.state===1))
-            console.log(list)
             let res = await swal({
               title: "你确定要将选中文件加入收藏夹吗?",
               text: "请再次确认你的选项",
@@ -252,6 +323,7 @@ export default {
     },
     data(){
         return{
+            loading:false,
             itemList:[
                 {
                     title:'下载',
@@ -318,6 +390,15 @@ export default {
         justify-content: space-between;
         align-items: center;
         user-select: none;
+        .spinner-border{
+            position: fixed;
+            z-index: 999;
+            left: 60%;
+            top: 50%;
+        }
+        .spinner-hidden{
+            display: none;
+        }
         .download-item{
             box-sizing: border-box;
             padding: 5px 8px;

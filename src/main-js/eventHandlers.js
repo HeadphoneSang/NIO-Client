@@ -13,20 +13,29 @@ export default {
          * 跳转页面到应用主页面
          */
         onClickLoginButton(mainWin){
-            ipcMain.handle('clickloginButton',(e,msg,u)=>{
+            ipcMain.handle('clickloginButton',(e,msg)=>{
                 mainWin.hide()
                 let homeWin = factory.createHomeWin()
                 homeWin.load()
                 username = msg
-                url =u
                 homeWin.closeHandler(()=>{
                     homeWin = null;
                     mainWin.show()
                 })
             })
         },
+        onReadyToLogin(mainWin){
+            ipcMain.handle('readyToLoginEvent',()=>{
+                return url
+            })
+        },
         onClickLogoutButton(mainWin){
             ipcMain.handle('clickLogoutButton',(args,msg)=>{
+            })
+        },
+        onInitAddress(mainWin){
+            ipcMain.handle('initAddressEvent',(e,address)=>{
+                url = address
             })
         },
         onloadedHome(mainWin){

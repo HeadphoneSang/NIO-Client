@@ -17,8 +17,11 @@
             <div class="func-container" @click.stop="clickSubItem('lock')" v-if="fatherTtitle=='files'">密码箱</div>
             <div class="func-container" @click.stop="clickSubItem('collect')" v-if="fatherTtitle=='files'">收藏</div>
             <div class="func-container" @click.stop="clickSubItem('uncollect')" v-if="fatherTtitle=='favorite'">移除收藏夹</div>
-            <div class="func-container" @click.stop="clickSubItem('move')" v-if="fatherTtitle=='files'||fatherTtitle=='recycle'">移动</div>
+            <div class="func-container" @click.stop="clickSubItem('move')" v-if="fatherTtitle=='files'||fatherTtitle=='recycle'||fatherTtitle=='lock'">移动</div>
         </div>
+    </div>
+    <div :class="loading?'spinner-border':'spinner-hidden'" role="status">
+        <span class="sr-only">Loading...</span>
     </div>
   </div>
 </template>
@@ -58,13 +61,13 @@ export default {
     },
     data(){
         return {
+            loading:false,
             ico:'',
             nameLength:8,
             hover:false,
             showSub:false,
             flag:this.item.modifier+'b',
             unshow:(e)=>{
-                
                 if(this.showMove){
                     return
                 }
@@ -99,7 +102,6 @@ export default {
     methods:{
         ...mapMutations(['changeFileState','showSubWindow']),
         clickMenu(){
-            console.log('menu:'+this.item.type)
             this.showSub = true
         },
         clickItem(){
@@ -111,12 +113,15 @@ export default {
             this.$emit('selectMore',this.index)
         },
         async clickSubItem(func){
+            if(this.loading)
+                return
+            this.loading = true
             switch(func){
                 case 'download':{
                     break;
                 }
                 case 'recycle':{
-                    this.recycleItem()
+                    await this.recycleItem()
                     break;
                 }
                 case 'delete':{
@@ -124,6 +129,7 @@ export default {
                     break;
                 }
                 case 'lock':{
+                    await this.lock()
                     break;
                 }
                 case 'collect':{
@@ -138,6 +144,71 @@ export default {
                     await this.uncollect()
                     break;
                 }
+            }
+            this.loading = false
+        },
+        async lock(){
+            let pass = await swal({
+                icon:require("@/assets/pass.png"),
+                title: "请输入密码,来继续操作",
+                content: {
+                  element: "input",
+                  attributes: {
+                    placeholder: "请在此输入密码",
+                    type: "password",
+                  },
+                },
+            })
+            if(pass==null||pass==""){
+                return swal("已取消")
+            }
+            try{
+                let {data} = await this.$http.get(`/file/checkLockBoxPassword/${pass}`)
+                if(data){
+                  swal({
+                    title:"密码正确",
+                    text:"文件转移请稍等...",
+                    closeOnClickOutside:false,
+                    buttons:{
+                        ok:{
+                            text:"退出",
+                            closeModal:false
+                        }
+                    }
+                  })
+                  return await this.moveToLock()
+                }
+                swal("密码错误,请联系管理员获得密码")
+            }catch(e){
+                console.log(e)
+                swal("网络请求出错")
+            }
+        },
+        async moveToLock(){
+            try {
+                let {data} = await this.$http.post('/file/lockItemsByItems',[this.item])
+                if(data.code==200){
+                    swal({
+                        icon:"success",
+                        text:`已经将${this.item.name}存放到密码箱中`
+                    })
+                    bus.emit("needFresh",this.fatherTtitle)
+
+                }else if(data.code=203){
+                    swal({
+                        icon:"error",
+                        text:"文件转移出现问题?已中断"
+                    })
+                }else{
+                    swal({
+                        icon:"error",
+                        text:"服务器内部出现问题"
+                    })
+                }
+            } catch (error) {
+                swal("网络连接错误")
+            }finally{
+                swal.close()
             }
         },
         async delete(){
@@ -159,7 +230,7 @@ export default {
             })
             if(res=="true"){
                 try {
-                    let {data} = await this.$http.post("/file/deleteFileByModifiers",[this.item.modifier])
+                    let {data} = await this.$http.post("/file/deleteFileByItems",[this.item])
                     if(data){
                         swal({
                             text:"删除成功",
@@ -199,7 +270,7 @@ export default {
             })
             if(res=='true'){
                 try {
-                    let {data} = await this.$http.get(`/file/recycleItem/${this.item.modifier}`)
+                    let {data} = await this.$http.post('/file/recycleItemsByItems',[this.item])
                     if(data.code==200){
                         swal(`成功将: ${this.item.name} 移入回收站`, {
                             icon: "success",
@@ -361,6 +432,15 @@ export default {
         margin-bottom: 10px;
         user-select: none;
         width: 150px;
+        .spinner-border{
+            position: fixed;
+            z-index: 999;
+            left: 60%;
+            top: 50%;
+        }
+        .spinner-hidden{
+            display: none;
+        }
         .out-container:hover{
             background-color: #f2f2f2;
             border-radius: 20px;

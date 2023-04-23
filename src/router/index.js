@@ -12,6 +12,10 @@ import Favorite from '@/views/client/firstPages/favorite.vue'
 import Recycle from '@/views/client/firstPages/recycle.vue'
 import Lock from '@/views/client/firstPages/lock.vue'
 import Transport from '@/views/client/firstPages/transport.vue'
+import UserInfoView from '@/views/client/firstPages/userInfo/userInfo.vue'
+import UploadRecordsView from '@/views/client/firstPages/userInfo/uploadRecords.vue'
+import DownloadRecordsView from '@/views/client/firstPages/userInfo/downloadRecords.vue'
+import DeleteRecordsView from '@/views/client/firstPages/userInfo/deleteRecords.vue'
 
 
 const routes = [
@@ -30,6 +34,29 @@ const routes = [
         path:'files',
         name:'files',
         component:FileView,
+      },
+      {
+        path:'userInfo',
+        name:'userInfo',
+        component:UserInfoView,
+        redirect:'/homePage/userInfo/uploadRecords',
+        children:[
+          {
+            path:'uploadRecords',
+            name:'uploadRecords',
+            component:UploadRecordsView,
+          },
+          {
+            path:'downloadRecords',
+            name:'downloadRecords',
+            component:DownloadRecordsView,
+          },
+          {
+            path:'deleteRecords',
+            name:'deleteRecords',
+            component:DeleteRecordsView,
+          },
+        ]
       },
       {
         path:'favorite',
