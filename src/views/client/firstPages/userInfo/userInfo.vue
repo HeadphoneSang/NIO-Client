@@ -35,6 +35,11 @@ export default {
                     title:'个人删除记录',
                     path:'/homePage/userInfo/deleteRecords'
                 },
+                {
+                    index:3,
+                    title:'下载路径设置',
+                    path:'/homePage/userInfo/downloadSettings'
+                },
             ]
         }
     },
@@ -56,6 +61,13 @@ export default {
         display: flex;
         flex-direction: column;
         align-items: center;
+        .content-contaniner{
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            
+        }
         .header-bar{
             width: 100%;
             display: flex;

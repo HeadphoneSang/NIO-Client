@@ -11,7 +11,7 @@
         <div :class="'hover '+(hover?'hover-menu':'hover-hidden')" @click.stop="clickMenu" :flag="flag">
         </div>
         <div :class="showSub?'showSub border-shadow':'hiddenSub'" :id="item.modifier" :flag="flag">
-            <div class="func-container" @click.stop="clickSubItem('download')">下载</div>
+            <div class="func-container" @click.stop="clickSubItem('download')" v-if="item.type!=='directory'"> 下载</div>
             <div class="func-container" @click.stop="clickSubItem('recycle')" v-if="fatherTtitle=='files'||fatherTtitle=='lock'">回收站</div>
             <div class="func-container" @click.stop="clickSubItem('delete')" v-if="fatherTtitle=='recycle'||fatherTtitle=='files'||fatherTtitle=='lock'">删除</div>
             <div class="func-container" @click.stop="clickSubItem('lock')" v-if="fatherTtitle=='files'">密码箱</div>
@@ -30,6 +30,7 @@
 import {mapMutations,mapState} from 'vuex'
 import bus from '@/views/bodyContentbus.js';
 import swal from 'sweetalert';
+import {ipcRenderer} from 'electron'
 export default {
     watch:{
         "item.type":{
@@ -57,7 +58,7 @@ export default {
         }
     },
     computed:{
-        ...mapState(['showMove','userInfo'])
+        ...mapState(['showMove','userInfo','downloadQueue'])
     },
     data(){
         return {
@@ -100,7 +101,7 @@ export default {
         }
     },
     methods:{
-        ...mapMutations(['changeFileState','showSubWindow']),
+        ...mapMutations(['changeFileState','showSubWindow','pushFileToDownloadQueue']),
         clickMenu(){
             this.showSub = true
         },
@@ -118,6 +119,7 @@ export default {
             this.loading = true
             switch(func){
                 case 'download':{
+                    this.pushToDownloadQueu()
                     break;
                 }
                 case 'recycle':{
@@ -146,6 +148,30 @@ export default {
                 }
             }
             this.loading = false
+        },
+        pushToDownloadQueu(){
+            let flag = this.downloadQueue.length === 0
+            this.pushFileToDownloadQueue({
+                item:{
+                    modifier:this.item.modifier,
+                    name:this.item.name,
+                    status:flag?2:0,//0是等待,1是完成,-1是失败,2是下载准备中,3是下载
+                    progress:0,
+                    downloading:false,
+                    username:this.userInfo.username,
+                    type:this.item.type
+                }
+            })
+            swal({
+                icon:"success",
+                text:`已将${this.item.name}加入下载队列`
+            })
+            if(flag){
+                ipcRenderer.send("download",{
+                    downloadPath:this.$http.defaults.baseURL+'/download/'+this.item.modifier+"/"+this.userInfo.username,
+                    fileName:this.item.name
+                })
+            }
         },
         async lock(){
             let pass = await swal({
@@ -230,7 +256,10 @@ export default {
             })
             if(res=="true"){
                 try {
-                    let {data} = await this.$http.post("/file/deleteFileByItems",[this.item])
+                    let {data} = await this.$http.post("/file/deleteFileByItems",{
+                        username:this.userInfo.username,
+                        items:[this.item]
+                    })
                     if(data){
                         swal({
                             text:"删除成功",

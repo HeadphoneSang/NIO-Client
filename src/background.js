@@ -1,21 +1,23 @@
 'use strict'
 
-import { app, protocol, BrowserWindow,Menu} from 'electron'
+import { app, protocol, BrowserWindow,Menu,Tray} from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import handlers from './main-js/eventHandlers.js'
+import handlers from './eventHandlers.js'
+import path from 'path'
 const winURL = process.env.NODE_ENV === 'development' ? `http://localhost:8080` : `file://${__dirname}/index.html`
-
+var appTray
+var win;
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
-Menu.setApplicationMenu(null)
+// Menu.setApplicationMenu(null)
 //删除工具栏
 async function createWindow() {
   // Create the browser window.
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 520,
     height: 640,
     // frame:false,
@@ -30,7 +32,6 @@ async function createWindow() {
     }
   })
   registerListener(win)
-
   win.on('ready-to-show',()=>{
     win.show()
   })
@@ -68,6 +69,28 @@ app.on('activate', () => {
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   createWindow()
+  var trayMenuTemplate = [
+    {
+        label: "切换账号",        
+        click: function() {
+            handlers.winCache.mainWin.close()        
+        } //打开相应页面
+    },
+    {
+        label: "退出客户端",
+        click: function() {
+            app.quit();
+        }
+    }
+  ]
+  let iconPath = path.join(__dirname, "../src/assets/pass.png");
+  appTray = new Tray(iconPath);
+    //图标的上下文菜单
+  const contextMenu = Menu.buildFromTemplate(trayMenuTemplate);
+  //设置此托盘图标的悬停提示内容
+  appTray.setToolTip("XXXX");
+  //设置此图标的上下文菜单
+  appTray.setContextMenu(contextMenu);
 })
 
 // Exit cleanly on request from parent process in development mode.

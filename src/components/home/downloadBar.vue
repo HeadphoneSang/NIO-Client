@@ -8,13 +8,14 @@
         <span class="sr-only">Loading...</span>
     </div>
   </div>
+  
 </template>
 
 <script>
 import {mapMutations,mapState} from 'vuex'
 import swal  from 'sweetalert'
 import bus from '@/views/bodyContentbus.js';
-
+import {ipcRenderer} from 'electron'
 
 export default {
     props:{
@@ -24,10 +25,10 @@ export default {
         }
     },
     computed:{
-        ...mapState(['userInfo','pathMap'])
+        ...mapState(['userInfo','pathMap','downloadQueue'])
     },
     methods:{
-        ...mapMutations(['showSubWindow']),
+        ...mapMutations(['showSubWindow','pushFileToDownloadQueue','shiftDownloadQueue','resetCheckLength']),
         hoverItem(item){
             item.show = true
         },
@@ -38,8 +39,8 @@ export default {
             if(this.loading)
                 return
             this.loading = true
-            switch(item.title){
-                case '移动':{
+            switch(item.value){
+                case 'move':{
                     if(this.title==="files"||this.title==="recycle"||this.title==="lock"){
                         await this.moveContent()
                     }
@@ -47,7 +48,7 @@ export default {
                         swal("此处禁止此操作")
                     break;
                 }
-                case "喜欢":{
+                case "favorite":{
                     if(this.title=='files')
                         await this.addFavorites()
                     else{
@@ -55,14 +56,14 @@ export default {
                     }
                     break;
                 }
-                case "取消喜欢":{
+                case "unfavorite":{
                     if(this.title=='favorite')
                         await this.deleteFavorites()
                     else
                         swal("此处禁止此操作")
                     break
                 }
-                case "回收站":{
+                case "recycle":{
                     if(this.title=="files"||this.title=="lock"){
                         await this.recycleItems()
                     }else{
@@ -70,7 +71,7 @@ export default {
                     }
                     break;
                 }
-                case "彻底删除":{
+                case "delete":{
                     if(this.title=="files"||this.title=="recycle"||this.title=="lock"){
                         await this.deleteItems()
                     }else{
@@ -78,7 +79,7 @@ export default {
                     }
                     break;
                 }
-                case "密码箱":{
+                case "lock":{
                     if(this.title=="files"){
                         await this.moveToLock()
                     }else{
@@ -86,8 +87,50 @@ export default {
                     }
                     break;
                 }
+                case "download":{
+                    if(this.title=="recycle")
+                        swal({
+                            icon:"error",
+                            text:"这里不可以下载,请将文件移除回收站再下载"
+                        })
+                    else{
+                        this.pushFileDownloadQueue()
+                    }
+                }
             }
             this.loading = false;
+        },
+        pushFileDownloadQueue(){
+            let list = this.pathMap[this.title].fileList.filter(item=>item.state==1)
+            let items = list.map(item=>{
+                return {
+                    modifier:item.modifier,
+                    name:item.name,
+                    status:0,//0是等待,1是完成,-1是失败,2是下载准备中,3是下载
+                    progress:0,
+                    downloading:false,
+                    username:this.userInfo.username,
+                    type:item.type
+                }
+            })
+            let flag = this.downloadQueue.length===0
+            if(flag){
+                items[0].status = 2;
+            }
+            items.forEach(item=>{
+                this.pushFileToDownloadQueue({item:item})
+            })
+            if(flag){
+                console.log(ipcRenderer)
+                ipcRenderer.send("download",{
+                    downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
+                    fileName:this.downloadQueue[0].name
+                })
+            }
+            swal({
+                icon:"success",
+                text:"成功添加到下载队列"
+            })
         },
         async moveToLock(){
             let list = this.pathMap[this.title].fileList.filter(item=>item.state===1)
@@ -136,6 +179,7 @@ export default {
                         text:`成功存放到密码箱中`
                     })
                     bus.emit("needFresh",this.fatherTtitle)
+                    this.resetCheckLength({title:this.title})
 
                 }else if(data.code=203){
                     swal({
@@ -175,12 +219,16 @@ export default {
                   closeOnClickOutside:false,
                 })
                 if(res=="true"){
-                    let {data} = await this.$http.post("/file/deleteFileByItems",list)
+                    let {data} = await this.$http.post("/file/deleteFileByItems",{
+                        username:this.userInfo.username,
+                        items:list
+                    })
                     if(data){
                         swal({
                             text:"删除成功",
                             icon:"success"
                         })
+                        this.resetCheckLength({title:this.title})
                     }else{
                         swal("删除遇到问题,操作终止!")
                     }
@@ -223,6 +271,7 @@ export default {
                             swal(`成功移入回收站`, {
                                 icon: "success",
                             });
+                            this.resetCheckLength({title:this.title})
                         }else if(data.code==203){
                             swal("移入回收站出现问题,请检查")
                         }else{

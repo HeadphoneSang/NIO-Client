@@ -10,26 +10,26 @@
     </div>
     <div :class="showMenu?'showSub border-shadow':'hiddenSub'" id="main" :style="{left:mouseX+'px',top:mouseY+'px'}">
         <div class="func-container" @click.stop="clickMenu('createDir')">新建文件夹</div>
-        <div class="func-container" @click.stop="clickMenu('upload')">上传文件</div>
+        <div class="func-container" @click.stop="clickMenu('upload')">上传文件
+        </div>
         <div class="func-container" @click.stop="clickMenu('refresh')">刷新页面</div>
     </div>
     <DownloadBar :title="title" v-if="pathMap[title].checkLength>1"></DownloadBar>
-    <!-- <Message :message="msgContent" :title="msgTitle" :x="20" :y="20" ref="msg"></Message> -->
     <div :class="loading?'spinner-border':'spinner-hidden'" role="status">
         <span class="sr-only">Loading...</span>
     </div>
+    <input type="file" multiple ref="input" class="input-hidden" @change="uploadFiles">
   </div>
 </template>
 
 <script>
 import {mapMutations,mapState} from 'vuex'
 import FileItem from '@/components/home/fileItem.vue'
-import Message from '@/components/universal/messageBar.vue'
 import DownloadBar from '@/components/home/downloadBar.vue'
 import swal from 'sweetalert';
 import {ipcRenderer} from 'electron'
 import bus from '@/views/bodyContentbus.js';
-
+import mainBus from '@/views/mainBus.js';
 export default {
     props:{
         title:{
@@ -47,7 +47,7 @@ export default {
         }
     },
     components:{
-        FileItem,Message,DownloadBar
+        FileItem,DownloadBar
     },
     computed:{
         ...mapState(['pathMap','userInfo']),
@@ -140,7 +140,7 @@ export default {
                     swal(`取消了创建`);
             });
         },
-        clickMenu(func){
+        async clickMenu(func){
             switch(func){
                 case 'createDir':{
                     if(this.title==="files")
@@ -150,6 +150,12 @@ export default {
                     break;
                 }
                 case 'upload':{
+                    if(this.title==="files"){
+                        let input = this.$refs.input;
+                        await input.click()  
+                    }
+                    else
+                        swal("此处不允许上传文件")                  
                     break;
                 }
                 case 'refresh':{
@@ -288,6 +294,26 @@ export default {
             }
             this.priorityFilesDir({title:this.title})
             this.loading = false;
+        },
+        uploadFiles(){
+            let files = this.$refs.input.files
+            let items = []
+            let length = this.pathMap[this.title].stack.length
+            let directory = length>0?this.pathMap[this.title].stack[length-1].modifier:""
+            //"" 代表根目录
+            for(let i =0;i<files.length;i++){
+                items[i] = {
+                    targetModifier:directory,
+                    file:files[i],
+                    name:files[i].name,
+                    status:0,
+                    progress:0,
+                    upload:false,
+                    username:this.userInfo.username,
+                    type:files[i].name.substring(files[i].name.lastIndexOf("."))
+                }
+            }
+            mainBus.emit('upload',items)
         }
     },
     async created(){
@@ -305,6 +331,11 @@ export default {
         bus.on('needFresh',title=>{
             if(title===this.title){
                 this.clickMenu("refresh")
+            }
+        })
+        bus.on('needUploadEvent',(title)=>{
+            if(title===this.title){
+                this.clickMenu('upload')
             }
         })
 
@@ -338,6 +369,12 @@ export default {
         flex-direction: column;
         overflow: hidden;
         position: relative;
+        .input-hidden{
+            width: 0;
+            height: 0;
+            position: absolute;
+            z-index: -2;
+        }
         .spinner-border{
             position: fixed;
             z-index: 999;

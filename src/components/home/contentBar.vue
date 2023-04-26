@@ -18,7 +18,7 @@
         <input type="text">
         <img src="@/assets/home/search.png" class="custom-icon-right">
       </div>
-      <div class="upload cursor-pointer">
+      <div class="upload cursor-pointer" @click="upload()">
       </div>
     </div>
     <div :class="loading?'spinner-border':'spinner-hidden'" role="status">
@@ -230,7 +230,10 @@ export default {
     },
     clickMoreItem(item){
 
-    } 
+    } ,
+    upload(){
+      bus.emit("needUploadEvent",this.title)
+    }
   },created(){
     this.initData()
     bus.on("updateDataEvent",async (params) => {

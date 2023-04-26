@@ -30,6 +30,7 @@ export default {
   watch:{
     autoLogin:{
       handler(){
+        console.log(this.autoLogin)
         window.localStorage.setItem("autoLogin",this.autoLogin)
       }
     }
@@ -67,7 +68,6 @@ export default {
               window.localStorage.setItem("lu",this.$encode(this.username))
               window.localStorage.setItem("lp",this.$encode(this.password))
             }
-            this.autoLogin = false
             ipcRenderer.invoke('clickloginButton',this.username)
           }
           else{

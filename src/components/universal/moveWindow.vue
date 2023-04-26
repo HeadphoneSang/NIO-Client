@@ -56,7 +56,7 @@ export default {
     }
   },
   methods:{
-    ...mapMutations(['hiddenSubWindow','priorityDir','switchMiniPostPath','setMiniFileList']),
+    ...mapMutations(['hiddenSubWindow','priorityDir','switchMiniPostPath','setMiniFileList','resetCheckLength']),
     async clickDir(item){
        if(item.type==="directory"){
         if(this.miniPathMap.moveQueue.some(to=>to.modifier==item.modifier)){
@@ -174,6 +174,7 @@ export default {
                       icon: "success",
                       button: "确认",
                     });
+                    this.resetCheckLength({title:this.miniPathMap.title})
                     bodyBus.emit('needFresh',this.miniPathMap.title)
                 }else if(data.code==203){
                     swal({
@@ -191,6 +192,7 @@ export default {
                     });
                 }
             } catch (error) {
+                console.log(error)
               swal.close()
               swal({
                   title: " 网络连接错误",

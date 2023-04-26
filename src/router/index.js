@@ -16,7 +16,9 @@ import UserInfoView from '@/views/client/firstPages/userInfo/userInfo.vue'
 import UploadRecordsView from '@/views/client/firstPages/userInfo/uploadRecords.vue'
 import DownloadRecordsView from '@/views/client/firstPages/userInfo/downloadRecords.vue'
 import DeleteRecordsView from '@/views/client/firstPages/userInfo/deleteRecords.vue'
-
+import UploadView from '@/components/transport/upload.vue'
+import DownloadView from '@/components/transport/download.vue'
+import DownloadSettings from '@/views/client/firstPages/userInfo/downloadSettings.vue'
 
 const routes = [
   {
@@ -56,6 +58,11 @@ const routes = [
             name:'deleteRecords',
             component:DeleteRecordsView,
           },
+          {
+            path:'downloadSettings',
+            name:'downloadSettings',
+            component:DownloadSettings,
+          },
         ]
       },
       {
@@ -77,6 +84,19 @@ const routes = [
         path:'transport',
         name:'transport',
         component:Transport,
+        redirect:'/homePage/transport/upload',
+        children:[
+          {
+            path:'upload',
+            name:'upload',
+            component:UploadView,
+          },
+          {
+            path:'download',
+            name:'download',
+            component:DownloadView,
+          },
+        ]
       },
     ]
   },
