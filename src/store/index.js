@@ -59,12 +59,84 @@ export default createStore({
         ],
         needFresh:false
       },
-    }
+    },
+    waitQueue:[//上传队列
+
+    ],
+    downloadQueue:[//下载队列
+
+    ]
+     
   },
   getters: {
-
-  },
-  mutations: { 
+   
+  },  
+  mutations: {
+    updateDownloadProgress(state,progress){
+      state.downloadQueue[0].progress = progress
+    },
+    changeDownloadFirstStatus(state,status){
+      state.downloadQueue[0].status = status;
+    }, 
+    /**
+     * 从下载队列中将元素出队
+     * @param {*} state 
+     */
+    shiftDownloadQueue(state){
+      state.downloadQueue.shift()
+    }
+    ,
+    /**
+     * 将待下载文件入队
+     * 检查是否已经存在相同的文件
+     * @param {*} state  
+     * @returns 
+     */
+    pushFileToDownloadQueue(state,params){
+      
+      if(state.downloadQueue.length>0&&state.downloadQueue.findLast!==undefined&&state.downloadQueue.findLast.modifier===params.item.modifier)
+        return
+      if((state.downloadQueue.findIndex((item)=>item.modifier==params.item.modifier))!==-1)
+        return
+      
+      state.downloadQueue.push(params.item)
+    },
+    /**
+     * 删除指定位置的等待元素
+     * @param {*} state 
+     * @param {*} params  
+     */
+    deleteFileIndownload(state,params){
+      let index = state.downloadQueue.findIndex((item)=>item.modifier===params.modifier)
+      state.downloadQueue.splice(index,1)
+    },
+    /**
+     * 将待上传文件信息推入上传队列等待上传
+     * @param {*} state 
+     * @param {*} params 
+     * @returns 
+     */
+    pushFileToUploadQueue(state,params){
+      if(state.waitQueue.length>0&&state.waitQueue.findLast!=undefined&&state.waitQueue.findLast.targetModifier==params.file.targetModifier)
+        return
+      state.waitQueue.push(params.file)
+    },
+    /**
+     * 删除正在等待上传的文件
+     * @param {*} state 
+     * @param {*} params 
+     */
+    deleteFileInUpload(state,params){
+      let index = state.waitQueue.findIndex((item)=>item.targetModifier===params.modifier&&item.name===params.name)
+      state.waitQueue.splice(index,1)
+    },
+    /**
+     * 头部等待上传元素出队
+     * @param {*} state 
+     */
+    shirftWaitQueue(state){
+      state.waitQueue.shift()
+    },
     setUser(state,params){
       state.userInfo.username = params.username
     },

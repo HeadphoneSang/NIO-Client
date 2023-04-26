@@ -43,6 +43,7 @@
     <div class="right-context">
       <router-view></router-view>
     </div>
+    <Message :message="msgContent" :title="msgTitle" :x="20" :y="20" ref="msg"></Message>
   </div>
 </template>
 
@@ -51,17 +52,22 @@ import {mapState,mapMutations} from 'vuex'
 import SubWindow from '@/components/universal/moveWindow.vue'
 import {ipcRenderer} from 'electron'
 import swal from 'sweetalert'
+import mainBus from '@/views/mainBus.js'
+import Message from '@/components/universal/messageBar.vue'
 
 export default {
   components:{
-    SubWindow
+    SubWindow,
+    Message
   },
   computed:{
-    ...mapState(['showMove','userInfo'])
+    ...mapState(['showMove','userInfo','waitQueue','downloadQueue'])
   },
   data(){
     return {
       pageName:"文件",
+      msgContent:"",
+      msgTitle:"",
       functions:[
         {
           name:'文件',
@@ -111,7 +117,7 @@ export default {
                 placeholder: "请在此输入密码",
                 type: "password",
               },
-            },
+            }, 
         }).then(async e=>{
           if(e===null)
             return swal("已取消")
@@ -137,12 +143,110 @@ export default {
         this.pageName = item.name
       }
     },
-    ...mapMutations(['setUser'])
+    ...mapMutations(['setUser','pushFileToUploadQueue','shirftWaitQueue','shiftDownloadQueue','changeDownloadFirstStatus','updateDownloadProgress']),
+    socketUpload(fileItem){
+      let url = this.$http.defaults.baseURL.substring(this.$http.defaults.baseURL.lastIndexOf("/")+1);
+      let ws = new WebSocket(`ws://${url}/ws`);
+      fileItem.upload = true
+      ws.onopen=()=>{
+        ws.send(JSON.stringify({
+          fileName:fileItem.name,
+          fileSize:fileItem.file.size,
+          modifier:fileItem.targetModifier,
+          username:fileItem.username
+        }))
+      }
+      ws.onmessage = (evt)=>{
+        let response = JSON.parse(evt.data)
+        if(response.code==101){
+          let pieceSize = 64*1024
+          let pieceCount = fileItem.file.size/pieceSize
+          let fileSize = fileItem.file.size;
+          for(let i = 0;i<pieceCount;i++){
+            let s = pieceSize*i
+            let e = Math.min(fileSize,s+pieceSize)
+            let blob = fileItem.file.slice(s,e)
+            ws.send(blob)
+          }
+        }else if(response.code==100){
+          fileItem.progress = response.data[0]
+          if(response.data[1]==fileItem.file.size)
+          {
+            ws.close()
+            this.$refs.msg.show = true
+            this.msgTitle = '上传提示'
+            this.msgContent = `${fileItem.name}上传完毕`
+            
+            fileItem.status = -1
+          }
+        }else if(response.code==403){
+          this.$refs.msg.show = true
+          this.msgTitle = '上传提示'
+            this.msgContent = `${fileItem.name}上传被拒绝`
+          fileItem.status=-1
+        }
+      }
+      ws.onclose = ()=>{
+        fileItem.status=-1
+      }
+    },
+    showMsgWin(title,msg){
+      this.$refs.msg.show = true
+      this.msgTitle = title
+      this.msgContent = msg
+    }
   },
   async created(){
     let data = await ipcRenderer.invoke('loadedHome',"need")
     this.$http.defaults.baseURL = data[1]
     this.setUser({username:data[0]})
+    setInterval(()=>{
+      if(this.waitQueue.length!=0){
+        let file = this.waitQueue[0]
+        if(file.progress==1||file.status==-1)
+          return this.shirftWaitQueue()
+        if(!file.upload)
+          this.socketUpload(file)
+      }
+    },1000);
+    mainBus.on('upload',(items)=>{
+      items.forEach(e=>{
+        this.pushFileToUploadQueue({file:e})
+        this.showMsgWin("上传提示",`${e.name}已加入上传队列`)
+      })
+    })
+    ipcRenderer.on("downloadUpdateEvent",(data,evt)=>{
+      this.updateDownloadProgress(evt)
+      this.changeDownloadFirstStatus(3)
+    })
+    ipcRenderer.on("downloadSuccessEvent",(e,data)=>{
+      this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载完成`)
+      this.shiftDownloadQueue()
+      
+      if(this.downloadQueue.length!==0){
+        this.changeDownloadFirstStatus(2)
+        ipcRenderer.send("download",{
+            downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
+            fileName:this.downloadQueue[0].name
+        })
+      }
+    })
+    ipcRenderer.on("downloadFailedEvent",data=>{
+      this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载失败`)
+      this.shiftDownloadQueue()
+    })
+    ipcRenderer.on('downloadInterruptedEvent',data=>{
+        this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载被中断`)
+        this.shiftDownloadQueue()
+    })
+  },
+  beforeUnmount(){
+    mainBus.all.clear() 
+  },
+  mounted(){
+    this.$nextTick(()=>{
+        console.log(this.$refs.msg) // 输出实例
+    })
   }
 }
 </script>
