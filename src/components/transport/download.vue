@@ -1,30 +1,30 @@
 <template>
   <div class="download-container">
+    <div class="none" v-if="downloadQueue.length===0">
+        <img src="@/assets/none.png" alt="">
+        <div>还没有任务要处理</div>
+    </div>
     <div class="progress-container">
-        <div class="download-item title">
+        <!-- <div class="download-item title">
             <div>名称</div>
-            <div class="right">
-                <div>状态</div>
-                <div>下载进度</div>
-            </div>
-        </div>
-        <div class="download-item" v-for="(item) in downloadQueue" :key="item.modifier" :title="item.name">
-            <div class="name">
+            <div>上传进度</div>
+        </div> -->
+        <div class="download-item" v-for="(item) in downloadQueue" :key="item.modifier">
+            <div class="left">
                 <img :src="initIcon(item.type)" alt="">
-                {{ item.name.length>maxNameLength?item.name.substring(0,maxNameLength)+'...':item.name }}
-                
-                <div class="button" title="从下载队列中删除" @click="deleteItem(item)">
+            </div>
+            <div class="middle">
+                <div class="name">{{ item.name.length>maxNameLength?item.name.substring(0,maxNameLength)+'...': item.name }}</div>
+                <div class="status">{{ checkStatus(item.status) }}</div>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" :style="'width: '+item.progress+'%'">{{item.progress}}%</div>
                 </div>
             </div>
             <div class="right">
-                <div class="status">{{ checkStatus(item.status) }}</div>
-                <div class="progress-">{{ item.progress }}%</div>
+                <div class="close" title="删除此项" @click="deleteItem(item)"></div>
             </div>
-      </div>
+        </div>
     </div>
-    <div class="progress">
-  <div class="progress-bar progress-bar-striped  progress-bar-animated" role="progressbar" style="width: 30%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">30%</div>
-</div>
   </div>
 </template>
 
@@ -37,7 +37,7 @@ export default {
     },
     data(){
         return{
-            maxNameLength:6
+            maxNameLength:18
         }
     },
     methods:{
@@ -100,14 +100,14 @@ export default {
             return require('@/assets/typesIcon/invalid.png')
         },
         deleteItem(item){
-            if(item.download===true){
+            if(item.status===2||item.status===3){
                 swal({
                     icon:require("@/assets/warn.png"),
                     text:'删除正在下载的文件会导致文件损坏!'
                 })
                 return
             }
-            // this.deleteFileIndownload({modifier:item.targetModifier,name:item.name})
+            this.deleteFileIndownload({modifier:item.targetModifier,name:item.name})
         }
     }
 }
@@ -116,6 +116,20 @@ export default {
 <style lang="less" scoped>
 .download-container{
     width: 100%;
+    .none{
+        position: absolute;
+        user-select: none;
+        left: calc(50% - 90px);
+        top: calc(50% - 90px);
+        img{
+            width: 180px;
+        }
+        div{
+            font-size: 16px;
+            color: #686868;
+            font-weight: 600;
+        }
+    }
     .progress-container{
       width: 97%;
       max-height: 85%;
@@ -133,46 +147,65 @@ export default {
       .download-item{
         user-select: none;
         box-sizing: border-box;
-        padding: 5px 20px;
+        padding: 8px 5px;
         display: flex;
         width: 100%;
         align-items: center;
-        justify-content: space-between;
         font-size: 15px;
-        .right{
-            display: flex;
-            div{
-                
-                margin-left: 10px;
+        margin-bottom: 5px;
+        border-radius: 10px;
+        .left{
+            flex: 1;
+            box-sizing: border-box;
+            padding: 5px;
+            img{
+                width: 40px;
+                margin-right: 5px;
             }
             
         }
-        .name{
-            display: flex;
-            align-items: center;
-            img{
-                width: 30px;
-                margin-left: 10px;
+        .middle{
+            flex: 12;
+            .name{
+                text-align: left;
+                width: 100%;
+                color: #0076c0;
+                margin-bottom: 5px;
+                font-size: 14px;
             }
-            .button{
+            .status{
+                color: #7c7c7c;
+                font-size: 13px;
+                width: 100%;
+                text-align: right;
+            }
+            
+        }
+        .right{
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            .close{
+                width: 35px;
+                height: 35px;
                 background-image: url(@/assets/close2.png);
                 background-size:cover;
-                user-select: none;
-                width: 25px;
-                height: 25px;
-                margin-left: 10px;
+                cursor: pointer;
             }
-            .button:hover{
+            .close:hover{
                 background-image: url(@/assets/close3.png);
             }
         }
         
       }
       .download-item:hover{
-        background-color: #efefef;
-        cursor: pointer;
-        border-radius: 10px;
+        background-color: #f5f5f5;
       }
     }
 }
+
 </style>

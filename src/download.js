@@ -2,21 +2,6 @@ const { ipcMain, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
 
-/* 判断文件是否存在的函数
-*@path_way, 文件路径
- */
-function isFileExisted(path_way) {
-  return new Promise((resolve, reject) => {
-    fs.access(path_way, (err) => {
-      if (err) {
-        reject(false);//"不存在"
-      } else {
-        resolve(true);//"存在"
-      }
-    })
-  })
-};
-
 exports.initDownload = function (winCache,config) {
   var downloadObj = {
     downloadPath: '', // 要下载的链接或文件

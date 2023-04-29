@@ -438,6 +438,9 @@ export default {
             if(this.item.type==='css'){
                 return this.ico = require('@/assets/typesIcon/css.png')
             }
+            if(this.item.type.match(/(jpg|jpeg|gif|png|psd|tga|pcx)/)!==null){
+                return this.ico = require('@/assets/typesIcon/image.png')
+            }
             this.ico = require('@/assets/typesIcon/invalid.png')
         }
     },

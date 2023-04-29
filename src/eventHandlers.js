@@ -7,7 +7,7 @@ import factory from './windowFactory.js'
 import fs from 'fs';
 const path = require("path")
 const { initDownload } = require('./download.js')
-const configPath = process.env.NODE_ENV === 'development' ? path.join(__dirname, '../src/config.json') : path.join(process.cwd(), 'config.json');
+const configPath = process.env.NODE_ENV === 'development' ? path.join(__dirname, '../config.json') : path.join(process.cwd(), 'config.json');
 var configData = fs.readFileSync(configPath, 'utf-8');
 const config = JSON.parse(configData)
 const winCache = {
@@ -28,12 +28,12 @@ export default {
                 let homeWin = factory.createHomeWin()
                 winCache.mainWin = homeWin
                 initDownload(winCache,config)
-                homeWin.closeHandler(async ()=>{
-                    winCache.mainWin.webContents.session.removeAllListeners('will-download')
-                    await winCache.mainWin.webContents.session.closeAllConnections()
+                homeWin.closeHandler(async (e)=>{
+                    e.preventDefault()
+                    homeWin.webContents.send('close-win')
+                })
+                homeWin.closedHandler(()=>{
                     winCache.mainWin = null
-                    ipcMain.removeAllListeners('download')
-                    mainWin.show()
                 })
                 username = msg
                 winCache.mainWin.load()
@@ -67,6 +67,20 @@ export default {
                     mainWin.show()
                     mainWin.reload()
                 }
+            })
+        },
+        onCloseMainPage(mainWin){
+            ipcMain.handle('close-homeWin',async (e,value)=>{
+                if(value){
+                    winCache.mainWin.webContents.session.removeAllListeners('will-download')
+                    await winCache.mainWin.webContents.session.closeAllConnections()
+                    ipcMain.removeAllListeners('download')
+                    winCache.mainWin.destroy()
+                    mainWin.close()
+                }else{
+                    winCache.mainWin.hide()
+                }
+                
             })
         },
         onGetConfig(){
