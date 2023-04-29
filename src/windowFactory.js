@@ -1,5 +1,6 @@
 import { BrowserWindow} from "electron"
-
+const path = require("path")
+const trayIconPath = process.env.NODE_ENV === 'development' ? path.join(__dirname,'../public/icons/ICON.png') : "./ICON.png"
 const winURL = process.env.NODE_ENV === 'development' ? `http://localhost:8080` : `file://${__dirname}/index.html`
 
 /**
@@ -12,6 +13,7 @@ const createHomeWin = function(){
     height:720,
     minWidth:1100,
     minHeight:600,
+    icon:trayIconPath,
     show:false,
     webPreferences: {
       devTools: true,
@@ -29,8 +31,13 @@ const createHomeWin = function(){
     homeWin.loadURL(winURL+"#/homePage")
   }
   homeWin.closeHandler = function(handler){
-    homeWin.on('close',()=>{
-      handler()
+    homeWin.on('close',(e)=>{
+      handler(e)
+    })
+  }
+  homeWin.closedHandler = function(handler){
+    homeWin.on('closed',(e)=>{
+      handler(e)
     })
   }
   return homeWin

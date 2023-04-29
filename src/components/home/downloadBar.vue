@@ -121,7 +121,6 @@ export default {
                 this.pushFileToDownloadQueue({item:item})
             })
             if(flag){
-                console.log(ipcRenderer)
                 ipcRenderer.send("download",{
                     downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
                     fileName:this.downloadQueue[0].name

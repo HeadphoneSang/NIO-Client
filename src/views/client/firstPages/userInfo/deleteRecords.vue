@@ -14,5 +14,7 @@ export default {
 </script>
 
 <style lang="less" scoped>
-
+    .delete-records-container{
+        width: 100%;
+    }
 </style>

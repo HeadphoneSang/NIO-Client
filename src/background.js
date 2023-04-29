@@ -1,9 +1,8 @@
-'use strict'
-
 import { app, protocol, BrowserWindow,Menu,Tray} from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import handlers from './eventHandlers.js'
 import path from 'path'
+const trayIconPath = process.env.NODE_ENV === 'development' ? path.join(__dirname,'../public/icons/ICON.png') : "./ICON.png"
 const winURL = process.env.NODE_ENV === 'development' ? `http://localhost:8080` : `file://${__dirname}/index.html`
 var appTray
 var win;
@@ -13,16 +12,16 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
-// Menu.setApplicationMenu(null)
+Menu.setApplicationMenu(null)
 //删除工具栏
 async function createWindow() {
   // Create the browser window.
   win = new BrowserWindow({
     width: 520,
     height: 640,
-    // frame:false,
+    icon: trayIconPath,
     show:false,
-    // resizable:false,
+    resizable:false,
     webPreferences: {
       
       // Use pluginOptions.nodeIntegration, leave this alone
@@ -31,12 +30,13 @@ async function createWindow() {
       contextIsolation: false
     }
   })
+  
   registerListener(win)
   win.on('ready-to-show',()=>{
     win.show()
   })
+  
   win.on('close',()=>{
-
     app.quit()
   })
   if (process.env.WEBPACK_DEV_SERVER_URL) {
@@ -73,24 +73,35 @@ app.on('ready', async () => {
     {
         label: "切换账号",        
         click: function() {
-            handlers.winCache.mainWin.close()        
+          if(handlers.winCache.mainWin!==null){
+            handlers.winCache.mainWin.destroy() 
+            win.show()
+          }    
         } //打开相应页面
     },
     {
         label: "退出客户端",
         click: function() {
-            app.quit();
+            if(handlers.winCache.mainWin!==null)
+            {
+              handlers.winCache.mainWin.close()
+            }else
+              app.quit();
         }
     }
   ]
-  let iconPath = path.join(__dirname, "../src/assets/pass.png");
-  appTray = new Tray(iconPath);
+  appTray = new Tray(trayIconPath);
     //图标的上下文菜单
   const contextMenu = Menu.buildFromTemplate(trayMenuTemplate);
   //设置此托盘图标的悬停提示内容
-  appTray.setToolTip("XXXX");
+  appTray.setToolTip("云上云下");
   //设置此图标的上下文菜单
   appTray.setContextMenu(contextMenu);
+  appTray.on('double-click',()=>{
+    if(handlers.winCache.mainWin!==null){
+      handlers.winCache.mainWin.show()
+    }
+  })
 })
 
 // Exit cleanly on request from parent process in development mode.

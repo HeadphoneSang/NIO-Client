@@ -47,6 +47,7 @@ export default {
         background-image: radial-gradient( #969ed8,#ECEFFF);
 
         padding-bottom: 30px;
+        
         .nav-bar{
             position: absolute;
             bottom: 15px;

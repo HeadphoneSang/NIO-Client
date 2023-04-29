@@ -155,6 +155,7 @@ export default {
           modifier:fileItem.targetModifier,
           username:fileItem.username
         }))
+        fileItem.status = 1
       }
       ws.onmessage = (evt)=>{
         let response = JSON.parse(evt.data)
@@ -176,8 +177,7 @@ export default {
             this.$refs.msg.show = true
             this.msgTitle = '上传提示'
             this.msgContent = `${fileItem.name}上传完毕`
-            
-            fileItem.status = -1
+            fileItem.status = 2
           }
         }else if(response.code==403){
           this.$refs.msg.show = true
@@ -187,7 +187,7 @@ export default {
         }
       }
       ws.onclose = ()=>{
-        fileItem.status=-1
+        fileItem.status=fileItem.status>0?2:-1
       }
     },
     showMsgWin(title,msg){
@@ -203,7 +203,7 @@ export default {
     setInterval(()=>{
       if(this.waitQueue.length!=0){
         let file = this.waitQueue[0]
-        if(file.progress==1||file.status==-1)
+        if(file.progress==1||file.status==-1||file.status==2)
           return this.shirftWaitQueue()
         if(!file.upload)
           this.socketUpload(file)
@@ -220,9 +220,9 @@ export default {
       this.changeDownloadFirstStatus(3)
     })
     ipcRenderer.on("downloadSuccessEvent",(e,data)=>{
+      this.changeDownloadFirstStatus(1)
       this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载完成`)
       this.shiftDownloadQueue()
-      
       if(this.downloadQueue.length!==0){
         this.changeDownloadFirstStatus(2)
         ipcRenderer.send("download",{
@@ -234,10 +234,48 @@ export default {
     ipcRenderer.on("downloadFailedEvent",data=>{
       this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载失败`)
       this.shiftDownloadQueue()
+      if(this.downloadQueue.length!==0){
+        this.changeDownloadFirstStatus(2)
+        ipcRenderer.send("download",{
+          downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
+          fileName:this.downloadQueue[0].name
+        })
+      }
     })
     ipcRenderer.on('downloadInterruptedEvent',data=>{
-        this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载被中断`)
-        this.shiftDownloadQueue()
+      this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载被中断`)
+      this.shiftDownloadQueue()
+        if(this.downloadQueue.length!==0){
+        this.changeDownloadFirstStatus(2)
+        ipcRenderer.send("download",{
+          downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
+          fileName:this.downloadQueue[0].name
+        })
+      }
+    })
+    ipcRenderer.on('close-win',()=>{
+      swal({
+        title: "你确定要关闭软件吗?",
+        text: "如果关闭会强制中断正在进行的任务!",
+        icon: "warning",
+        closeOnClickOutside:false,
+        buttons: {
+          minimize:{
+            
+            text:"最小化",
+            value:false,
+          },
+          close:{
+            text:"关闭",
+            value:true,
+            color:'#000000'
+          }
+        },
+        
+      })
+      .then((value) => {
+        ipcRenderer.invoke('close-homeWin',value)
+      });
     })
   },
   beforeUnmount(){
