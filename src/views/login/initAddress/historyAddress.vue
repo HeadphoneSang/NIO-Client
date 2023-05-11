@@ -116,11 +116,12 @@ export default {
         this.comfirming = true
         let seq = Math.ceil(Math.random()*10000)
         try {
-          let ret = await this.$http.get("http://"+this.remoteAddress+"/login/confirm/"+seq)
+          let port = this.remoteAddress.lastIndexOf(':')!==-1?null:25565
+          let ret = await this.$http.get("http://"+(port!==null?this.remoteAddress+`:${port}`:this.remoteAddress)+"/login/confirm/"+seq)
           if(ret.status===200){
             if(ret.data==seq+1)
             {
-              this.$http.defaults.baseURL = "http://"+this.remoteAddress
+              this.$http.defaults.baseURL = "http://"+(port!==null?this.remoteAddress+`:${port}`:this.remoteAddress)
               let has = this.history.find(item=>item.ip==this.remoteAddress)
               if(has===undefined){
                 this.history = [

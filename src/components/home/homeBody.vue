@@ -96,7 +96,7 @@ export default {
         }
     },
     methods:{
-        ...mapMutations(['checkInRange','setFileList','switchPostPath','pointContent','selectAll','priorityFilesDir']),
+        ...mapMutations(['checkInRange','setFileList','switchPostPath','switchPrePath','pointContent','selectAll','priorityFilesDir']),
         onDbClickFile(item){
             if(item.type=="directory"){
                 this.switchPostPath({
@@ -323,7 +323,17 @@ export default {
           await this.getFilelist()
         }
         else{
-            this.clickMenu("refresh")
+            if(this.title==='favorite'){
+                await this.getFilelist()
+                this.switchPrePath({
+                    title:this.title,
+                    modifier:''
+                })
+                bus.emit('freshView',this.title)
+
+            }
+            else
+                this.clickMenu("refresh")
         }
         /**
          * 注册监听

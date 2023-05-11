@@ -30,7 +30,6 @@ export default {
   watch:{
     autoLogin:{
       handler(){
-        console.log(this.autoLogin)
         window.localStorage.setItem("autoLogin",this.autoLogin)
       }
     }

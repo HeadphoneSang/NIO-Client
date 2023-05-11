@@ -179,11 +179,47 @@ export default {
             this.msgContent = `${fileItem.name}上传完毕`
             fileItem.status = 2
           }
-        }else if(response.code==403){
+        }else if(response.code==200){
+            this.$refs.msg.show = true
+            this.msgTitle = '上传提示'
+            this.msgContent = `${fileItem.name}上传完毕`
+            fileItem.status = 2
+        }
+        else if(response.code==403){
           this.$refs.msg.show = true
           this.msgTitle = '上传提示'
             this.msgContent = `${fileItem.name}上传被拒绝`
           fileItem.status=-1
+        }else if(response.code==203){
+          this.$refs.msg.show = true
+          this.msgTitle = '上传提示'
+            this.msgContent = `${fileItem.name}上传失败,连接已超时`
+          fileItem.status=-1
+        }else if(response.code==502){
+          this.$refs.msg.show = true
+          this.msgTitle = '上传提示'
+            this.msgContent = `${fileItem.name}上传失败,网络连接错误`
+          fileItem.status=-1
+        }else if(response.code==500){
+          this.$refs.msg.show = true
+          this.msgTitle = '上传提示'
+            this.msgContent = `${fileItem.name}上传失败,文件已损坏`
+          fileItem.status=-1
+        }else if(response.code==503){
+          this.$refs.msg.show = true
+          this.msgTitle = '上传提示'
+            this.msgContent = `${fileItem.name}上传失败,文件已损坏`
+          fileItem.status=-1
+        }else if(response.code==205){
+          let pieceSize = 64*1024
+          let pieceCount = fileItem.file.size/pieceSize
+          let fileSize = fileItem.file.size;
+          for(let i = 0;i<pieceCount;i++){
+            let s = pieceSize*i
+            let e = Math.min(fileSize,s+pieceSize)
+            let blob = fileItem.file.slice(s,e)
+            ws.send(blob)
+          }
         }
       }
       ws.onclose = ()=>{
@@ -207,6 +243,22 @@ export default {
           return this.shirftWaitQueue()
         if(!file.upload)
           this.socketUpload(file)
+      }
+      if(this.downloadQueue.length>0){
+        
+        if(this.downloadQueue[0].preProgress===undefined){
+          this.downloadQueue[0].detachedTime = 0
+          this.downloadQueue[0].preProgress=this.downloadQueue[0].progress
+          return
+        }
+        if(this.downloadQueue[0].preProgress==this.downloadQueue[0].progress){
+          if(++this.downloadQueue[0].detachedTime>30){
+            this.downloadQueue[0].status = 4
+          }
+          return
+        }
+        this.downloadQueue[0].preProgress=this.downloadQueue[0].progress
+        
       }
     },1000);
     mainBus.on('upload',(items)=>{
@@ -243,7 +295,7 @@ export default {
       }
     })
     ipcRenderer.on('downloadInterruptedEvent',data=>{
-      this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载被中断`)
+      this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载结束`)
       this.shiftDownloadQueue()
         if(this.downloadQueue.length!==0){
         this.changeDownloadFirstStatus(2)

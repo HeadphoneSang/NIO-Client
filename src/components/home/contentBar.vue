@@ -14,10 +14,7 @@
       </div>
     </div>
     <div class="right-additions">
-      <div class="custom-input">
-        <input type="text">
-        <img src="@/assets/home/search.png" class="custom-icon-right">
-      </div>
+
       <div class="upload cursor-pointer" @click="upload()">
       </div>
     </div>
@@ -253,6 +250,10 @@ export default {
           })
         }
         this.loading = false
+    })
+    bus.on("freshView",(title)=>{
+      if(this.title==title)
+        this.freshView()
     })
     
   },mounted(){

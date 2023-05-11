@@ -59,6 +59,9 @@ export default {
                 case 3:{
                     return '下载中..'
                 }
+                case 4:{
+                    return '网络连接错误'
+                }
             }
         },
         initIcon(type){

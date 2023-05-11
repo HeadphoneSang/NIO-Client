@@ -39,7 +39,11 @@ exports.initDownload = function (winCache,config) {
       } else if (state === 'progressing') {
         if (item.isPaused()) {
         } else {
-          winCache.mainWin.webContents.send('downloadUpdateEvent',(item.getReceivedBytes()*100/item.getTotalBytes()).toFixed(2))
+          try{
+            winCache.mainWin.webContents.send('downloadUpdateEvent',(item.getReceivedBytes()*100/item.getTotalBytes()).toFixed(2))
+          }catch(e){
+            item.cancel()
+          }
         }
       }
     })
@@ -54,5 +58,9 @@ exports.initDownload = function (winCache,config) {
       }
       resetDownloadObj()
     })
+    ipcMain.on('clearAllQuest',()=>{
+      item.cancel()
+    })
   })
+  return this
 }

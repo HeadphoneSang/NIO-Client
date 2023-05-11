@@ -84,7 +84,7 @@ export default {
             return require('@/assets/typesIcon/invalid.png')
         },
         deleteItem(item){
-            if(item.upload===true){
+            if(item.status==1){
                 swal({
                     icon:require("@/assets/warn.png"),
                     text:'删除正在上传的文件会导致文件损坏!'

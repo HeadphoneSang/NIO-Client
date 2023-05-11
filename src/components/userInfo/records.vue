@@ -106,7 +106,6 @@ export default {
         },
         async initRecordsList(){
             this.loading = true
-            console.log(this.userInfo)
             switch(this.title){
                 case "delete":{
                     await this.getDeleteRecords()

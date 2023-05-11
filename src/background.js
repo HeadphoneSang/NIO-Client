@@ -1,5 +1,6 @@
-import { app, protocol, BrowserWindow,Menu,Tray} from 'electron'
+import { app, protocol, BrowserWindow,Menu,Tray, ipcMain} from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
+import{powerSaveBlocker} from 'electron'
 import handlers from './eventHandlers.js'
 import path from 'path'
 const trayIconPath = process.env.NODE_ENV === 'development' ? path.join(__dirname,'../public/icons/ICON.png') : "./ICON.png"
@@ -7,12 +8,12 @@ const winURL = process.env.NODE_ENV === 'development' ? `http://localhost:8080` 
 var appTray
 var win;
 const isDevelopment = process.env.NODE_ENV !== 'production'
-
+powerSaveBlocker.start('prevent-app-suspension')
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
-Menu.setApplicationMenu(null)
+// Menu.setApplicationMenu(null)
 //删除工具栏
 async function createWindow() {
   // Create the browser window.
@@ -28,14 +29,15 @@ async function createWindow() {
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: true,
       contextIsolation: false
-    }
+    } 
   })
-  
   registerListener(win)
   win.on('ready-to-show',()=>{
     win.show()
   })
-  
+  // win.webContents.session.on('will-download',(event,item)=>{
+    
+  // })
   win.on('close',()=>{
     app.quit()
   })
@@ -72,8 +74,13 @@ app.on('ready', async () => {
   var trayMenuTemplate = [
     {
         label: "切换账号",        
-        click: function() {
+        click: async function() {
+          
           if(handlers.winCache.mainWin!==null){
+            handlers.winCache.mainWin.webContents.session.removeAllListeners('will-download')
+            ipcMain.emit('clearAllQuest')
+            await handlers.winCache.mainWin.webContents.session.closeAllConnections()
+            ipcMain.removeAllListeners('download')
             handlers.winCache.mainWin.destroy() 
             win.show()
           }    

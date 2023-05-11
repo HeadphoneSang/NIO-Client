@@ -27,7 +27,7 @@ export default {
                 mainWin.hide()
                 let homeWin = factory.createHomeWin()
                 winCache.mainWin = homeWin
-                initDownload(winCache,config)
+                initDownload(winCache,config).downloadObj
                 homeWin.closeHandler(async (e)=>{
                     e.preventDefault()
                     homeWin.webContents.send('close-win')
@@ -73,6 +73,7 @@ export default {
             ipcMain.handle('close-homeWin',async (e,value)=>{
                 if(value){
                     winCache.mainWin.webContents.session.removeAllListeners('will-download')
+                    ipcMain.emit('clearAllQuest')
                     await winCache.mainWin.webContents.session.closeAllConnections()
                     ipcMain.removeAllListeners('download')
                     winCache.mainWin.destroy()
