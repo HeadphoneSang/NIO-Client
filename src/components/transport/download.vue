@@ -31,9 +31,11 @@
 <script>
 import swal from 'sweetalert'
 import {mapState,mapMutations} from 'vuex'
+import { ipcRenderer } from 'electron'
+
 export default {
   computed:{
-        ...mapState(['downloadQueue'])
+        ...mapState(['downloadQueue','userInfo'])
     },
     data(){
         return{
@@ -110,7 +112,17 @@ export default {
                 })
                 return
             }
-            this.deleteFileIndownload({modifier:item.targetModifier,name:item.name})
+            if(this.downloadQueue[0].modifier===item.modifier){
+                ipcRenderer.send('clearAllQuest')
+                this.deleteFileIndownload({modifier:item.modifier,name:item.name})
+                if(this.downloadQueue.length>0)
+                ipcRenderer.send("download",{
+                    downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
+                    fileName:this.downloadQueue[0].name
+                })
+                return
+            }
+            this.deleteFileIndownload({modifier:item.modifier,name:item.name})
         }
     }
 }

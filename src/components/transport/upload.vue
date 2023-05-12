@@ -31,6 +31,7 @@
 <script>
 import swal from 'sweetalert'
 import {mapState,mapMutations} from 'vuex'
+import { ipcRenderer } from 'electron'
 export default {
     computed:{
         ...mapState(['waitQueue'])
@@ -91,6 +92,7 @@ export default {
                 })
                 return
             }
+            
             this.deleteFileInUpload({modifier:item.targetModifier,name:item.name})
         },
         getStatus(code){

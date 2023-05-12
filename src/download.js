@@ -20,6 +20,7 @@ exports.initDownload = function (winCache,config) {
   ipcMain.on('download', (evt, args) => {
     downloadObj.downloadPath = args.downloadPath
     downloadObj.fileName = args.fileName
+    console.log("donwload")
     if(fs.existsSync(config.downloadPath)){
       winCache.mainWin.webContents.downloadURL(downloadObj.downloadPath)
     }else{
@@ -38,6 +39,7 @@ exports.initDownload = function (winCache,config) {
         winCache.mainWin.webContents.send('downloadInterruptedEvent',"")
       } else if (state === 'progressing') {
         if (item.isPaused()) {
+          console.log(downloadObj.fileName+'运行中暂停了')
         } else {
           try{
             winCache.mainWin.webContents.send('downloadUpdateEvent',(item.getReceivedBytes()*100/item.getTotalBytes()).toFixed(2))
@@ -56,10 +58,15 @@ exports.initDownload = function (winCache,config) {
         
         winCache.mainWin.webContents.send('downloadFailedEvent',"")
       }
+      item.cancel()
+      console.log('cancel')
+      ipcMain.removeAllListeners('clearAllQuest')
       resetDownloadObj()
     })
     ipcMain.on('clearAllQuest',()=>{
       item.cancel()
+      console.log('cancel')
+      ipcMain.removeAllListeners('clearAllQuest')
     })
   })
   return this

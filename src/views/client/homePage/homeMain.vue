@@ -252,7 +252,7 @@ export default {
           return
         }
         if(this.downloadQueue[0].preProgress==this.downloadQueue[0].progress){
-          if(++this.downloadQueue[0].detachedTime>30){
+          if(++this.downloadQueue[0].detachedTime>15){
             this.downloadQueue[0].status = 4
           }
           return
@@ -268,10 +268,18 @@ export default {
       })
     })
     ipcRenderer.on("downloadUpdateEvent",(data,evt)=>{
+      
+      if(this.downloadQueue[0].status===2)
+         this.changeDownloadFirstStatus(3)
+      else{
+        if(this.downloadQueue[0].progress!=evt)
+          this.changeDownloadFirstStatus(3)
+      }
       this.updateDownloadProgress(evt)
-      this.changeDownloadFirstStatus(3)
     })
     ipcRenderer.on("downloadSuccessEvent",(e,data)=>{
+      if(this.downloadQueue.length<1)
+        return
       this.changeDownloadFirstStatus(1)
       this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载完成`)
       this.shiftDownloadQueue()
@@ -284,26 +292,33 @@ export default {
       }
     })
     ipcRenderer.on("downloadFailedEvent",data=>{
+      if(this.downloadQueue.length<1)
+        return
       this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载失败`)
-      this.shiftDownloadQueue()
-      if(this.downloadQueue.length!==0){
-        this.changeDownloadFirstStatus(2)
-        ipcRenderer.send("download",{
-          downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
-          fileName:this.downloadQueue[0].name
-        })
-      }
+      this.changeDownloadFirstStatus(-1)
+      // this.shiftDownloadQueue()
+      // if(this.downloadQueue.length!==0){
+      //   this.changeDownloadFirstStatus(2)
+      //   ipcRenderer.send("download",{
+      //     downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
+      //     fileName:this.downloadQueue[0].name
+      //   })
+      // }
     })
     ipcRenderer.on('downloadInterruptedEvent',data=>{
-      this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载结束`)
-      this.shiftDownloadQueue()
-        if(this.downloadQueue.length!==0){
-        this.changeDownloadFirstStatus(2)
-        ipcRenderer.send("download",{
-          downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
-          fileName:this.downloadQueue[0].name
-        })
-      }
+      if(this.downloadQueue.length<1)
+        return
+      this.showMsgWin("下载提示",`${this.downloadQueue[0].name}网络请求错误`)
+      this.changeDownloadFirstStatus(4)
+      // this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载结束`)
+      // this.shiftDownloadQueue()
+      //   if(this.downloadQueue.length!==0){
+      //   this.changeDownloadFirstStatus(2)
+      //   ipcRenderer.send("download",{
+      //     downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
+      //     fileName:this.downloadQueue[0].name
+      //   })
+      // }
     })
     ipcRenderer.on('close-win',()=>{
       swal({
