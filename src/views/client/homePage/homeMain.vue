@@ -160,26 +160,30 @@ export default {
       ws.onmessage = (evt)=>{
         let response = JSON.parse(evt.data)
         if(response.code==101){
-          let pieceSize = 64*1024
+          let pieceSize = 1024*1024
           let pieceCount = fileItem.file.size/pieceSize
           let fileSize = fileItem.file.size;
           for(let i = 0;i<pieceCount;i++){
             let s = pieceSize*i
             let e = Math.min(fileSize,s+pieceSize)
             let blob = fileItem.file.slice(s,e)
-            ws.send(blob)
+            if(ws.readyState===1){
+              ws.send(blob)
+            }
           }
         }else if(response.code==100){
           fileItem.progress = response.data[0]
           if(response.data[1]==fileItem.file.size)
           {
             ws.close()
+            fileItem.progress = 1
             this.$refs.msg.show = true
             this.msgTitle = '上传提示'
             this.msgContent = `${fileItem.name}上传完毕`
             fileItem.status = 2
           }
         }else if(response.code==200){
+            fileItem.progress = response.data[0]
             this.$refs.msg.show = true
             this.msgTitle = '上传提示'
             this.msgContent = `${fileItem.name}上传完毕`
@@ -211,7 +215,7 @@ export default {
             this.msgContent = `${fileItem.name}上传失败,文件已损坏`
           fileItem.status=-1
         }else if(response.code==205){
-          let pieceSize = 64*1024
+          let pieceSize = 1024*1024
           let pieceCount = fileItem.file.size/pieceSize
           let fileSize = fileItem.file.size;
           for(let i = 0;i<pieceCount;i++){
@@ -222,8 +226,14 @@ export default {
           }
         }
       }
-      ws.onclose = ()=>{
-        fileItem.status=fileItem.status>0?2:-1
+      ws.onclose = (e)=>{
+        // fileItem.status=fileItem.status>0?2:-1
+        console.log(e)
+        if(fileItem.progress<1||fileItem.status<0){
+          fileItem.status = -1
+        }else{
+          fileItem.status = 2
+        }
       }
     },
     showMsgWin(title,msg){
@@ -237,13 +247,15 @@ export default {
     this.$http.defaults.baseURL = data[1]
     this.setUser({username:data[0]})
     setInterval(()=>{
+      //上传轮询检查
       if(this.waitQueue.length!=0){
         let file = this.waitQueue[0]
-        if(file.progress==1||file.status==-1||file.status==2)
+        if(file.progress==1||file.status==2)//file.status==-1||
           return this.shirftWaitQueue()
         if(!file.upload)
           this.socketUpload(file)
       }
+      //下载轮询检查
       if(this.downloadQueue.length>0){
         
         if(this.downloadQueue[0].preProgress===undefined){
