@@ -13,7 +13,7 @@ powerSaveBlocker.start('prevent-app-suspension')
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
-// Menu.setApplicationMenu(null)
+Menu.setApplicationMenu(null)
 //删除工具栏
 async function createWindow() {
   // Create the browser window.

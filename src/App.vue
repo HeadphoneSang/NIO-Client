@@ -24,7 +24,9 @@ html,body{
     background-color: rgba(121, 122, 122, 0.45);
   }
 }
-
+.file-info{
+  width: 350px;
+}
 .cursor-pointer{
   cursor: url('@/assets/point.png'), pointer;
 }

@@ -160,7 +160,7 @@ export default {
       ws.onmessage = (evt)=>{
         let response = JSON.parse(evt.data)
         if(response.code==101){
-          let pieceSize = 1024*1024
+          let pieceSize = 256*1024
           let pieceCount = fileItem.file.size/pieceSize
           let fileSize = fileItem.file.size;
           for(let i = 0;i<pieceCount;i++){
@@ -234,6 +234,10 @@ export default {
         }else{
           fileItem.status = 2
         }
+      }
+      ws.onerror = (e)=>{
+        console.log(e)
+        console.log(ws.bufferedAmount)
       }
     },
     showMsgWin(title,msg){

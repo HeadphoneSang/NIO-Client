@@ -18,6 +18,8 @@
             <div class="func-container" @click.stop="clickSubItem('collect')" v-if="fatherTtitle=='files'">收藏</div>
             <div class="func-container" @click.stop="clickSubItem('uncollect')" v-if="fatherTtitle=='favorite'">移除收藏夹</div>
             <div class="func-container" @click.stop="clickSubItem('move')" v-if="fatherTtitle=='files'||fatherTtitle=='recycle'||fatherTtitle=='lock'">移动</div>
+            <div class="func-container" @click.stop="clickSubItem('rename')" v-if="fatherTtitle=='files'||fatherTtitle=='recycle'||fatherTtitle=='lock'">重命名</div>
+            <div class="func-container" @click.stop="clickSubItem('detail')">详细信息</div>
         </div>
     </div>
     <div :class="loading?'spinner-border':'spinner-hidden'" role="status">
@@ -146,8 +148,89 @@ export default {
                     await this.uncollect()
                     break;
                 }
+                case 'rename':{
+                    await this.renameFile()
+                    break;
+                }
+                case 'detail':{
+                    await this.getDetail()
+                }
             }
             this.loading = false
+        },
+        async getDetail(){
+            try {
+                let {data} = await this.$http.get(`/file/getFileDescByModifier/${this.item.modifier}`)
+                if(data.code!=200){
+                    swal({
+                        title:"文件出错",
+                        text:"错误代码: "+data.code
+                    })
+                }
+                var elem = document.createElement("div");
+                elem.innerHTML = `
+                <div style="width:100%;display:flex;align-items:center;margin-bottom:10px">
+                    <img src="${this.ico}" style="width:40px;margin-right:10px"></img>
+                    <span style="color:#4a4c4d;font-weight:600;font-size:14px" @click="clickName">${this.item.name}</span>
+                </div>
+                <div style="width:100%">
+                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:10px'>文件大小:</div>
+                    <div style="width:100%;text-align:left;color:#696969;font-size:14px">${data.desc.size}</div>     
+                </div>
+                <hr/>
+                <div style="width:100%;margin-bottom:10px">
+                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:10px'>创建时间:</div>
+                    <div style="width:100%;text-align:left;color:#696969;font-size:14px">${data.desc.createTime}</div>     
+                </div>
+                <div style="width:100%;margin-bottom:10px">
+                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:10px'>修改时间:</div>
+                    <div style="width:100%;text-align:left;color:#696969;font-size:14px">${data.desc.modifierTime}</div>     
+                </div>
+                <div style="width:100%">
+                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:10px'>访问时间:</div>
+                    <div style="width:100%;text-align:left;color:#696969;font-size:14px">${data.desc.accessTime}</div>     
+                </div>
+                `;
+                swal(
+                    {
+                        className:'file-info',
+                        content:elem,
+                        buttons: true,
+                    }
+                )
+            } catch (error) {
+                console.log(error)
+            }
+            
+        },
+        clickName(){
+            console.log(2)
+        },
+        async renameFile(){
+            let pass = await swal({
+                icon:require("@/assets/home/rename.png"),
+                title: "请输入要修改的名称",
+                content: {
+                  element: "input",
+                  attributes: {
+                    placeholder: "新名称",
+                  },
+                },
+            })
+            if(pass==null||pass==""){
+                return swal("已取消")
+            }
+            try{
+                let {data} = await this.$http.post("/file/renameFileByModifier",{
+                    modifier:this.item.modifier,
+                    name:pass
+                })
+                swal(data.msg)
+                bus.emit("needFresh",this.fatherTtitle)
+            }catch(e){
+                console.log(e)
+                swal("网络请求出错")
+            }
         },
         pushToDownloadQueu(){
             let flag = this.downloadQueue.length === 0
@@ -476,6 +559,7 @@ export default {
         .out-container:hover{
             background-color: #f2f2f2;
             border-radius: 20px;
+
         }
         .checked{
             background-color: #d3e6fd;
