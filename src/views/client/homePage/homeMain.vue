@@ -51,9 +51,13 @@
 import {mapState,mapMutations} from 'vuex'
 import SubWindow from '@/components/universal/moveWindow.vue'
 import {ipcRenderer} from 'electron'
+import AsyncLock from 'async-lock/lib'
+const lock = new AsyncLock();
 import swal from 'sweetalert'
 import mainBus from '@/views/mainBus.js'
 import Message from '@/components/universal/messageBar.vue'
+import{powerSaveBlocker} from 'electron'
+import { connection } from 'websocket'
 
 export default {
   components:{
@@ -61,13 +65,14 @@ export default {
     Message
   },
   computed:{
-    ...mapState(['showMove','userInfo','waitQueue','downloadQueue'])
+    ...mapState(['showMove','userInfo','uploadQueue','downloadQueue'])
   },
   data(){
     return {
       pageName:"文件",
       msgContent:"",
       msgTitle:"",
+      uploadMap:new Map(),
       functions:[
         {
           name:'文件',
@@ -143,125 +148,73 @@ export default {
         this.pageName = item.name
       }
     },
-    ...mapMutations(['setUser','pushFileToUploadQueue','shirftWaitQueue','shiftDownloadQueue','changeDownloadFirstStatus','updateDownloadProgress']),
-    socketUpload(fileItem){
-      let url = this.$http.defaults.baseURL.substring(this.$http.defaults.baseURL.lastIndexOf("/")+1);
-      let ws = new WebSocket(`ws://${url}/ws`);
-      fileItem.upload = true
-      ws.onopen=()=>{
-        ws.send(JSON.stringify({
-          fileName:fileItem.name,
-          fileSize:fileItem.file.size,
-          modifier:fileItem.targetModifier,
-          username:fileItem.username
-        }))
-        fileItem.status = 1
-      }
-      ws.onmessage = (evt)=>{
-        let response = JSON.parse(evt.data)
-        if(response.code==101){
-          let pieceSize = 256*1024
-          let pieceCount = fileItem.file.size/pieceSize
-          let fileSize = fileItem.file.size;
-          for(let i = 0;i<pieceCount;i++){
-            let s = pieceSize*i
-            let e = Math.min(fileSize,s+pieceSize)
-            let blob = fileItem.file.slice(s,e)
-            if(ws.readyState===1){
-              ws.send(blob)
-            }
-          }
-        }else if(response.code==100){
-          fileItem.progress = response.data[0]
-          if(response.data[1]==fileItem.file.size)
-          {
-            ws.close()
-            fileItem.progress = 1
-            this.$refs.msg.show = true
-            this.msgTitle = '上传提示'
-            this.msgContent = `${fileItem.name}上传完毕`
-            fileItem.status = 2
-          }
-        }else if(response.code==200){
-            fileItem.progress = response.data[0]
-            this.$refs.msg.show = true
-            this.msgTitle = '上传提示'
-            this.msgContent = `${fileItem.name}上传完毕`
-            fileItem.status = 2
-        }
-        else if(response.code==403){
-          this.$refs.msg.show = true
-          this.msgTitle = '上传提示'
-            this.msgContent = `${fileItem.name}上传被拒绝`
-          fileItem.status=-1
-        }else if(response.code==203){
-          this.$refs.msg.show = true
-          this.msgTitle = '上传提示'
-            this.msgContent = `${fileItem.name}上传失败,连接已超时`
-          fileItem.status=-1
-        }else if(response.code==502){
-          this.$refs.msg.show = true
-          this.msgTitle = '上传提示'
-            this.msgContent = `${fileItem.name}上传失败,网络连接错误`
-          fileItem.status=-1
-        }else if(response.code==500){
-          this.$refs.msg.show = true
-          this.msgTitle = '上传提示'
-            this.msgContent = `${fileItem.name}上传失败,文件已损坏`
-          fileItem.status=-1
-        }else if(response.code==503){
-          this.$refs.msg.show = true
-          this.msgTitle = '上传提示'
-            this.msgContent = `${fileItem.name}上传失败,文件已损坏`
-          fileItem.status=-1
-        }else if(response.code==205){
-          let pieceSize = 1024*1024
-          let pieceCount = fileItem.file.size/pieceSize
-          let fileSize = fileItem.file.size;
-          for(let i = 0;i<pieceCount;i++){
-            let s = pieceSize*i
-            let e = Math.min(fileSize,s+pieceSize)
-            let blob = fileItem.file.slice(s,e)
-            ws.send(blob)
-          }
-        }
-      }
-      ws.onclose = (e)=>{
-        // fileItem.status=fileItem.status>0?2:-1
-        console.log(e)
-        if(fileItem.progress<1||fileItem.status<0){
-          fileItem.status = -1
-        }else{
-          fileItem.status = 2
-        }
-      }
-      ws.onerror = (e)=>{
-        console.log(e)
-        console.log(ws.bufferedAmount)
-      }
-    },
+    ...mapMutations(['setUser','shiftDownloadQueue','changeDownloadFirstStatus','updateDownloadProgress','pushUploadObjToQueue','changeUploadObjStatus','addObjToUploadMap','deleteObjInUploadQueue','deleteObjInUploadMap','clearUploadTask','addObjToUploadQueue']),
     showMsgWin(title,msg){
       this.$refs.msg.show = true
       this.msgTitle = title
       this.msgContent = msg
-    }
+    },
+    /**
+     * 注册上传相关的监听器
+     */
+     registerUploadListener(){
+      ipcRenderer.on('uploadTaskCreated',(e,key)=>{
+        let fileObj =this.uploadMap.get(key); 
+        if(fileObj!==null){
+          fileObj.status = 2;
+        }
+      });
+      ipcRenderer.on('uploadTaskProgress',(e,key,data)=>{
+        let fileObj =this.uploadMap.get(key); 
+        if(fileObj!==null){
+          fileObj.progress = ((data*100)/fileObj.size).toFixed(2);
+        }
+      });
+      ipcRenderer.on('uploadTaskCompleted',async (e,key)=>{
+        lock.acquire('updateUploadQueue',async (done)=>{
+          this.uploadMap.get(key).status = 3;
+          let name = this.uploadMap.get(key).name;
+          this.uploadMap.delete(key);
+          this.deleteObjInUploadQueue(key);
+          await this.commitQueueToupload();
+          this.showMsgWin('上传提示',`${name}上传完毕`);
+          done();
+        })
+      });
+      ipcRenderer.on('uploadTaskFailed',(e,key)=>{
+        this.uploadMap.get(key).status = 4;
+        this.deleteObjInUploadMap(key);
+      });
+      ipcRenderer.on('uploadTaskClosed',(e,key)=>{
+        this.uploadMap.get(key).status = 6;
+      })
+    },
+    /**
+     * 将等待队列的文件任务提交到上传进程
+     */
+     async commitQueueToupload(){
+      for(let i = 0;i<this.uploadQueue.length;i++){
+        let item = this.uploadQueue[i];
+        if(item.status!==0&&item.status!==4&&item.status!==5)
+          continue;
+        let isOK = await ipcRenderer.invoke('commitMission',JSON.stringify(item));
+        if(isOK){
+          item.status = 1;
+          this.uploadMap.set(item.tarPath,item);
+        }
+        else
+          return
+      }
+    },
   },
   async created(){
-    let data = await ipcRenderer.invoke('loadedHome',"need")
-    this.$http.defaults.baseURL = data[1]
-    this.setUser({username:data[0]})
+    let data = await ipcRenderer.invoke('loadedHome',"need");
+    this.$http.defaults.baseURL = data[1];
+    this.setUser({username:data[0]});
+    this.registerUploadListener();
     setInterval(()=>{
-      //上传轮询检查
-      if(this.waitQueue.length!=0){
-        let file = this.waitQueue[0]
-        if(file.progress==1||file.status==2)//file.status==-1||
-          return this.shirftWaitQueue()
-        if(!file.upload)
-          this.socketUpload(file)
-      }
       //下载轮询检查
       if(this.downloadQueue.length>0){
-        
         if(this.downloadQueue[0].preProgress===undefined){
           this.downloadQueue[0].detachedTime = 0
           this.downloadQueue[0].preProgress=this.downloadQueue[0].progress
@@ -274,15 +227,25 @@ export default {
           return
         }
         this.downloadQueue[0].preProgress=this.downloadQueue[0].progress
-        
       }
-    },1000);
+    },2000);
     mainBus.on('upload',(items)=>{
-      items.forEach(e=>{
-        this.pushFileToUploadQueue({file:e})
-        this.showMsgWin("上传提示",`${e.name}已加入上传队列`)
-      })
-    })
+      for(let i = 0;i<items.length;i++){
+        let obj = items[i];
+        if(this.uploadMap.has(obj.tarPath))
+          continue;
+        this.uploadQueue.push(obj);
+      }
+      this.commitQueueToupload()
+    });
+    mainBus.on('deleteUploadQueue',(key)=>{
+      lock.acquire('updateUploadQueue',async (done)=>{
+          this.uploadMap.delete(key);
+          this.deleteObjInUploadQueue(key);
+          await this.commitQueueToupload();
+          done();
+        })
+    });
     ipcRenderer.on("downloadUpdateEvent",(data,evt)=>{
       
       if(this.downloadQueue[0].status===2)
@@ -312,36 +275,21 @@ export default {
         return
       this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载失败`)
       this.changeDownloadFirstStatus(-1)
-      // this.shiftDownloadQueue()
-      // if(this.downloadQueue.length!==0){
-      //   this.changeDownloadFirstStatus(2)
-      //   ipcRenderer.send("download",{
-      //     downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
-      //     fileName:this.downloadQueue[0].name
-      //   })
-      // }
     })
     ipcRenderer.on('downloadInterruptedEvent',data=>{
       if(this.downloadQueue.length<1)
         return
       this.showMsgWin("下载提示",`${this.downloadQueue[0].name}网络请求错误`)
       this.changeDownloadFirstStatus(4)
-      // this.showMsgWin("下载提示",`${this.downloadQueue[0].name}下载结束`)
-      // this.shiftDownloadQueue()
-      //   if(this.downloadQueue.length!==0){
-      //   this.changeDownloadFirstStatus(2)
-      //   ipcRenderer.send("download",{
-      //     downloadPath:this.$http.defaults.baseURL+'/download/'+this.downloadQueue[0].modifier+"/"+this.userInfo.username,
-      //     fileName:this.downloadQueue[0].name
-      //   })
-      // }
     })
     ipcRenderer.on('close-win',()=>{
       swal({
         title: "你确定要关闭软件吗?",
         text: "如果关闭会强制中断正在进行的任务!",
         icon: "warning",
-        closeOnClickOutside:false,
+        className:'closeWin',
+        closeOnClickOutside:true,
+        showCloseButton: true,
         buttons: {
           minimize:{
             
@@ -351,22 +299,31 @@ export default {
           close:{
             text:"关闭",
             value:true,
-            color:'#000000'
           }
         },
         
       })
       .then((value) => {
-        ipcRenderer.invoke('close-homeWin',value)
+        if(value==null)
+          return;
+        this.clearUploadTask();
+        ipcRenderer.invoke('close-homeWin',value);
       });
     })
   },
   beforeUnmount(){
-    mainBus.all.clear() 
+    mainBus.all.clear();
+    ipcRenderer.removeAllListeners('uploadTaskCreated');
+    ipcRenderer.removeAllListeners('uploadTaskProgress');
+    ipcRenderer.removeAllListeners('uploadTaskFailed');
+    ipcRenderer.removeAllListeners('uploadTaskClosed');
+    ipcRenderer.removeAllListeners('updateUploadQueue');
+    ipcRenderer.removeAllListeners('uploadTaskCompleted');
+    
   },
   mounted(){
     this.$nextTick(()=>{
-        console.log(this.$refs.msg) // 输出实例
+        // console.log(this.$refs.msg) // 输出实例
     })
   }
 }

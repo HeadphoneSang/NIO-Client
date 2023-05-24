@@ -8,8 +8,6 @@ import 'bootstrap/dist/js/bootstrap.js'
 import 'jquery/dist/jquery.min.js'
 import axios from 'axios';
 import CryptoJS from 'crypto-js'
-
-
 // 十六位十六进制数作为密钥
 const SECRET_KEY = CryptoJS.enc.Utf8.parse("3333e6e143439161");
 // 十六位十六进制数作为密钥偏移量
@@ -106,45 +104,6 @@ function getGuid() {
 
 app.config.globalProperties.$guid = getGuid
 
-function socketUpload(type,file,dom){
-  
-  let ws = new WebSocket('ws://localhost:8921/ws');
-  ws.onopen=()=>{
-    ws.send(JSON.stringify({
-      fileName:file.name,
-      fileSize:file.size
-    }))
-  }
-  ws.onmessage = (evt)=>{
-    let response = JSON.parse(evt.data)
-    if(response.code==101){
-      console.log("连接已就绪")
-      let pieceSize = 64*1024
-      let pieceCount = file.size/pieceSize
-      let fileSize = file.size;
-      
-      for(let i = 0;i<pieceCount;i++){
-        let s = pieceSize*i
-        let e = Math.min(fileSize,s+pieceSize)
-        let blob = file.slice(s,e)
-        ws.send(blob)
-      }
-    }else if(response.code==100){
-      console.log(response)
-      // document.querySelector("#"+dom).innerHTML = response.data[0]
-      if(response.data[1]==file.size)
-      {
-        ws.close()
-        console.log("over")
-        // document.querySelector("#"+dom).innerHTML = "上传完毕"
-      }
-        
-    }
-  }
-  ws.onclose = ()=>{
-    console.log('closed')
-  }
-}
-app.config.globalProperties.$upload = socketUpload
+app.config.globalProperties.$upload = socketUpload;
 
 

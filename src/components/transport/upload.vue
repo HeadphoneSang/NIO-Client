@@ -1,6 +1,6 @@
 <template>
   <div class="upload-container">
-    <div class="none" v-if="waitQueue.length===0">
+    <div class="none" v-if="uploadQueue.length===0">
         <img src="@/assets/none.png" alt="">
         <div>还没有任务要处理</div>
     </div>
@@ -9,15 +9,15 @@
             <div>名称</div>
             <div>上传进度</div>
         </div> -->
-        <div class="upload-item" v-for="(item) in waitQueue" :key="item.targetModifier+item.name">
+        <div class="upload-item" v-for="(item) in uploadQueue" :key="item.tarPath">
             <div class="left">
                 <img :src="initIcon(item.type)" alt="">
             </div>
             <div class="middle">
                 <div class="name">{{ item.name.length>maxNameLength?item.name.substring(0,maxNameLength)+'...': item.name }}</div>
-                <div class="status">{{ getStatus(item.status) }}</div>
+                <div class="status">{{getStatus(item.status)}}</div>
                 <div class="progress">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" :style="'width: '+(item.progress*100).toFixed(0)+'%'">{{(item.progress*100).toFixed(2)}}%</div>
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" :aria-valuenow="(item.progress*1).toFixed(0)" aria-valuemin="0" aria-valuemax="100" :style="'width: '+(item.progress*1).toFixed(0)+'%'">{{(item.progress*1).toFixed(2)}}%</div>
                 </div>
             </div>
             <div class="right">
@@ -31,10 +31,11 @@
 <script>
 import swal from 'sweetalert'
 import {mapState,mapMutations} from 'vuex'
+import mainBus from '@/views/mainBus.js'
 import { ipcRenderer } from 'electron'
 export default {
     computed:{
-        ...mapState(['waitQueue'])
+        ...mapState(['uploadQueue'])
     },
     data(){
         return{
@@ -84,16 +85,31 @@ export default {
             }
             return require('@/assets/typesIcon/invalid.png')
         },
-        deleteItem(item){
-            if(item.status==1){
-                swal({
+        async deleteItem(item){
+            if(item.status!=0&&item.status!=4&&item.status!=5){
+                let confirm = await swal({
                     icon:require("@/assets/warn.png"),
-                    text:'删除正在上传的文件会导致文件损坏!'
-                })
-                return
+                    title:"你确定要删除吗？",
+                    text:'删除正在上传的文件会导致文件损坏!',
+                    className:"closeUpload",
+                    buttons:{
+                        two:{
+                            text:"取消",
+                            value:false
+                        },one:{
+                            text:"确定",
+                            value:true
+                        }
+                    }
+                });
+                if(!confirm){
+                    return;
+                }else{
+                    await ipcRenderer.invoke('onForceDeleteUploadTask',item.tarPath);
+                }
+                
             }
-            
-            this.deleteFileInUpload({modifier:item.targetModifier,name:item.name})
+            mainBus.emit('deleteUploadQueue',item.tarPath);
         },
         getStatus(code){
             switch(code){
@@ -101,13 +117,22 @@ export default {
                     return '等待上传中...'
                 }
                 case 1:{
-                    return '正在上传中...'
-                }
-                case -1:{
-                    return '上传失败...'
+                    return '上传准备中...'
                 }
                 case 2:{
+                    return '上传中...'
+                }
+                case 3:{
                     return '上传完成'
+                }
+                case 4:{
+                    return '上传失败';
+                }
+                case 5:{
+                    return '网络错误'
+                }
+                case 6:{
+                    return '重新连接中'
                 }
             }
         }

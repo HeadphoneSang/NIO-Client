@@ -2,19 +2,31 @@
  * 主线程监听模块
  * handlers属性下是对应事件的监听器
  */
-import { ipcMain, ipcRenderer,dialog} from "electron"
+import { ipcMain, dialog,powerSaveBlocker, BrowserWindow,shell} from "electron"
 import factory from './windowFactory.js'
 import fs from 'fs';
+import upload from './upload.js';
+import ws from './ws.js';
 const path = require("path")
 const { initDownload } = require('./download.js')
 const configPath = process.env.NODE_ENV === 'development' ? path.join(__dirname, '../config.json') : path.join(process.cwd(), 'config.json');
 var configData = fs.readFileSync(configPath, 'utf-8');
 const config = JSON.parse(configData)
+var sleepId;
 const winCache = {
+    /**
+     * @type {BrowserWindow}
+     */
     mainWin:null
 }
 var username
 var url
+if(config!=null&&config.stopSleep!=undefined){
+    if(config.stopSleep){
+        sleepId = powerSaveBlocker.start('prevent-app-suspension');
+    }
+}
+
 export default {
     winCache:winCache,
     handlers:{
@@ -28,6 +40,11 @@ export default {
                 let homeWin = factory.createHomeWin()
                 winCache.mainWin = homeWin
                 initDownload(winCache,config).downloadObj
+                ws.setWin(homeWin);
+                ws.setUrl(url);
+                ipcMain.handle('commitMission',(e,args)=>{
+                    return upload.addDownloadQuest(JSON.parse(args))
+                })
                 homeWin.closeHandler(async (e)=>{
                     e.preventDefault()
                     homeWin.webContents.send('close-win')
@@ -75,8 +92,10 @@ export default {
                     winCache.mainWin.webContents.session.removeAllListeners('will-download')
                     ipcMain.emit('clearAllQuest')
                     await winCache.mainWin.webContents.session.closeAllConnections()
-                    ipcMain.removeAllListeners('download')
-                    winCache.mainWin.destroy()
+                    ipcMain.removeAllListeners('download');
+                    ipcMain.removeHandler('commitMission');                    winCache.mainWin.destroy();
+                    upload.clearTaskQueue();
+                    ws.cancelThisMissions();
                     mainWin.close()
                 }else{
                     winCache.mainWin.hide()
@@ -108,6 +127,36 @@ export default {
             ipcMain.handle('changeAutoOpen',(e,msg)=>{
                 config.openDirAuto = msg
                 fs.writeFileSync(configPath,JSON.stringify(config))
+            })
+        },
+        onChangePowerState(){
+            ipcMain.handle('changePowerState',(e,flag)=>{
+                config.stopSleep = flag;
+                fs.writeFileSync(configPath,JSON.stringify(config));
+                if(flag&&(sleepId==undefined||powerSaveBlocker.isStarted(sleepId))){
+                    sleepId = powerSaveBlocker.start('prevent-app-suspension');
+                }else if(!flag){
+                    powerSaveBlocker.stop(sleepId);
+                }
+            })
+        },
+        onChangeMaxUpload(){
+            ipcMain.handle('changeMaxUpload',(e,max)=>{
+                config.maxUploadThread = max;
+                fs.writeFileSync(configPath,JSON.stringify(config));
+                upload.setMax(max);
+            })
+        },
+        onOpenDownloadDir(){
+            ipcMain.handle('onOpenDownloadDir',()=>{
+                shell.openPath(config.downloadPath);
+            })
+        },
+        onForceDeleteUploadTask(){
+            ipcMain.handle("onForceDeleteUploadTask",(e,key)=>{
+                ws.closeSocket(key);
+                upload.deleteMainUploadTask(key);
+                return true;
             })
         }
     }

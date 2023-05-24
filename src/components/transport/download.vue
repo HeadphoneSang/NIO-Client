@@ -67,6 +67,7 @@ export default {
             }
         },
         initIcon(type){
+            console.log(type)
             if(type.match(/(zip|gz|tar|7z|rar)/)!==null){
                 return require('@/assets/typesIcon/zip.png')
             }
@@ -98,6 +99,9 @@ export default {
             }
             if(type==='jar'){
                 return require('@/assets/typesIcon/JAR.png')
+            }
+            if(type.match(/(jpg|jpeg|gif|png|psd|tga|pcx)/)!==null){
+                return require('@/assets/typesIcon/image.png')
             }
             if(type==='css'){
                 return require('@/assets/typesIcon/css.png')

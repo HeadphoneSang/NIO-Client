@@ -1,3 +1,4 @@
+import { stat } from 'original-fs';
 import { createStore } from 'vuex'
 
 export default createStore({
@@ -60,18 +61,43 @@ export default createStore({
         needFresh:false
       },
     },
-    waitQueue:[//上传队列
-
-    ],
+    uploadQueue:[],
     downloadQueue:[//下载队列
 
-    ]
+    ],
+    uploadMap:new Map()
      
   },
   getters: {
    
   },  
   mutations: {
+    clearUploadTask(state){
+      state.uploadMap.clear();
+      state.uploadQueue.splice(0,state.uploadQueue.length);
+    },
+    deleteObjInUploadMap(state,key){
+      state.uploadMap.delete(key);
+    },
+    deleteObjInUploadQueue(state,key){
+      let index = state.uploadQueue.findIndex((item)=>item.tarPath==key);
+      state.uploadQueue.splice(index,1);
+    },
+    addObjToUploadQueue(state,obj){
+      state.uploadQueue.push(obj);
+    },
+    addObjToUploadMap(state,params){
+      console.log(params)
+      state.uploadMap.set(params.key,params.obj);
+      console.log(state.uploadMap)
+    },
+    changeUploadObjStatus(state,params){
+      state.uploadQueue[params.index] = params.status;
+    },
+    pushUploadObjToQueue(state,obj){
+      state.uploadQueue.push(obj);
+    },
+    //================↓下载的↓====================
     updateDownloadProgress(state,progress){
       state.downloadQueue[0].progress = progress
     },
@@ -109,33 +135,6 @@ export default createStore({
     deleteFileIndownload(state,params){
       let index = state.downloadQueue.findIndex((item)=>item.modifier===params.modifier)
       state.downloadQueue.splice(index,1)
-    },
-    /**
-     * 将待上传文件信息推入上传队列等待上传
-     * @param {*} state 
-     * @param {*} params 
-     * @returns 
-     */
-    pushFileToUploadQueue(state,params){
-      if(state.waitQueue.length>0&&state.waitQueue.findLast!=undefined&&state.waitQueue.findLast.targetModifier==params.file.targetModifier)
-        return
-      state.waitQueue.push(params.file)
-    },
-    /**
-     * 删除正在等待上传的文件
-     * @param {*} state 
-     * @param {*} params 
-     */
-    deleteFileInUpload(state,params){
-      let index = state.waitQueue.findIndex((item)=>item.targetModifier===params.modifier&&item.name===params.name)
-      state.waitQueue.splice(index,1)
-    },
-    /**
-     * 头部等待上传元素出队
-     * @param {*} state 
-     */
-    shirftWaitQueue(state){
-      state.waitQueue.shift()
     },
     setUser(state,params){
       state.userInfo.username = params.username

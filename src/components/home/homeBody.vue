@@ -295,25 +295,36 @@ export default {
             this.priorityFilesDir({title:this.title})
             this.loading = false;
         },
-        uploadFiles(){
+        async uploadFiles(){
             let files = this.$refs.input.files
             let items = []
             let length = this.pathMap[this.title].stack.length
             let directory = length>0?this.pathMap[this.title].stack[length-1].modifier:""
-            //"" 代表根目录
-            for(let i =0;i<files.length;i++){
-                items[i] = {
-                    targetModifier:directory,
-                    file:files[i],
-                    name:files[i].name,
-                    status:0,
-                    progress:0,
-                    upload:false,
-                    username:this.userInfo.username,
-                    type:files[i].name.substring(files[i].name.lastIndexOf("."))
+            try{
+                let {data:parPath} = await this.$http.get(`/file/getPathByModifier/${directory}`);
+                for(let i = 0;i<files.length;i++){
+                    let file = files[i];
+                    let obj = {
+                      name:file.name,
+                      username:this.userInfo.username,
+                      oriPath:file.path,
+                      tarPath:`${parPath}${file.name}`,
+                      size:files[i].size,
+                      progress:0,
+                      status:0,//0 等待队列、1上传准备 2上传中 3上传完成 4上传失败 5网络错误 6重新连接中
+                      bIndex:0,
+                      sendByte:0,
+                      type:file.path.substring(file.path.lastIndexOf('.')+1)
+                    }
+                    items.push(obj);
                 }
+                mainBus.emit('upload',items)
             }
-            mainBus.emit('upload',items)
+            catch(e){
+                console.log(e);
+                swal('网络连接错误');
+                return;
+            }
         }
     },
     async created(){

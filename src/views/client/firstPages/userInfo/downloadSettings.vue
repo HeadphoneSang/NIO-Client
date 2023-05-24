@@ -17,11 +17,29 @@
             <input type="checkbox" v-model="autoOpenDir">
         </div>
     </div>
+    <div class="select-item">
+        <div class="left">
+            <div class="name">睡眠执行任务:</div>
+        </div>
+        <div class="right">
+            <input type="checkbox" v-model="stopSleep" @change="changeSleep">
+        </div>
+    </div>
+    <div class="select-item">
+        <div class="left">
+            <div class="name">并行传输文件限制:</div>
+        </div>
+        <div class="right">
+            <input type="number" @change="changeMaxUpload" v-model="maxUpload">
+        </div>
+    </div>
+    
   </div>
 </template>
 
 <script>
 import {ipcRenderer} from 'electron'
+import swal from 'sweetalert'
 export default {
     watch:{
         autoOpenDir:{
@@ -33,7 +51,10 @@ export default {
     data(){
         return{
             url:'',
-            autoOpenDir:false
+            autoOpenDir:false,
+            maxUpload:3,
+            itemList:[1,2,3,4,5],
+            stopSleep:false
         }
     },
     methods:{
@@ -42,12 +63,34 @@ export default {
             if(temp==null||temp==undefined)
                 return
             this.url = temp
+        },
+        changeMaxUpload(){
+            if(this.maxUpload >5){
+                this.maxUpload = 3;
+                ipcRenderer.invoke('changeMaxUpload',this.maxUpload);
+                return swal({
+                    icon:'error',
+                    text:"最大同步下载不可以超过5",
+                    buttons:{
+                        exit:{
+                            text:"确认"
+                        }
+                    }
+                })
+            }
+            ipcRenderer.invoke('changeMaxUpload',this.maxUpload);
+        },
+        changeSleep(){
+            ipcRenderer.invoke('changePowerState',this.stopSleep);
         }
     },
     async created(){
-        let config = await ipcRenderer.invoke('getConfig')
-        this.url = config.downloadPath
-        this.autoOpenDir = config.openDirAuto
+        let config = await ipcRenderer.invoke('getConfig');
+        console.log(config);
+        this.url = config.downloadPath;
+        this.autoOpenDir = config.openDirAuto;
+        this.stopSleep = config.stopSleep;
+        this.maxUpload = config.maxUploadThread;
     }
 }
 </script>
@@ -105,5 +148,20 @@ export default {
         .select-item:nth-child(1){
             border-bottom: 1px solid #e9e9e9;
         }
+        .select-item:nth-child(4){
+            input{
+                border: 1px solid #bebebe;
+                width: 20px;
+                height: 20px;
+                font-size: 12px;
+                border-radius: 5px;
+                text-align: center;
+                color: #656565;
+            }
+            input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{
+                -webkit-appearance: none !important;
+            }
+        }
+            
     }
 </style>

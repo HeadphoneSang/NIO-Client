@@ -37,7 +37,7 @@ export default {
                 },
                 {
                     index:3,
-                    title:'下载路径设置',
+                    title:'全局设置',
                     path:'/homePage/userInfo/downloadSettings'
                 },
             ]

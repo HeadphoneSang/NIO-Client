@@ -174,28 +174,45 @@ export default {
                     <span style="color:#4a4c4d;font-weight:600;font-size:14px" @click="clickName">${this.item.name}</span>
                 </div>
                 <div style="width:100%">
-                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:10px'>文件大小:</div>
+                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:5px'>文件大小:</div>
                     <div style="width:100%;text-align:left;color:#696969;font-size:14px">${data.desc.size}</div>     
                 </div>
                 <hr/>
-                <div style="width:100%;margin-bottom:10px">
-                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:10px'>创建时间:</div>
+                <div style="width:100%;margin-bottom:5px">
+                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:5px'>创建时间:</div>
                     <div style="width:100%;text-align:left;color:#696969;font-size:14px">${data.desc.createTime}</div>     
                 </div>
-                <div style="width:100%;margin-bottom:10px">
-                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:10px'>修改时间:</div>
+                <div style="width:100%;margin-bottom:5px">
+                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:5px'>修改时间:</div>
                     <div style="width:100%;text-align:left;color:#696969;font-size:14px">${data.desc.modifierTime}</div>     
                 </div>
-                <div style="width:100%">
-                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:10px'>访问时间:</div>
+                <div style="width:100%;margin-bottom:5px">
+                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:5px'>访问时间:</div>
                     <div style="width:100%;text-align:left;color:#696969;font-size:14px">${data.desc.accessTime}</div>     
+                </div>
+                <div style="width:100%;margin-bottom:5px">
+                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:5px'>上传时间:</div>
+                    <div style="width:100%;text-align:left;color:#696969;font-size:14px">${data.desc.uploadTime}</div>     
+                </div>
+                <div style="width:100%">
+                    <div style='width:100%;text-align:left;font-size:15px;margin-bottom:5px'>上传用户:</div>
+                    <div style="width:100%;text-align:left;color:#696969;font-size:14px">${data.desc.username}</div>     
                 </div>
                 `;
                 swal(
                     {
                         className:'file-info',
                         content:elem,
-                        buttons: true,
+                        buttons:{
+                            minimize:{        
+                              text:"取消",
+                              value:false,
+                            },
+                            close:{
+                              text:"关闭",
+                              value:true,
+                            }
+                        }
                     }
                 )
             } catch (error) {

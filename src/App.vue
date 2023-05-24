@@ -30,7 +30,40 @@ html,body{
 .cursor-pointer{
   cursor: url('@/assets/point.png'), pointer;
 }
+.closeWin{
+  .swal-button-container:nth-child(2){
+    .swal-button--close{
+      background-color: #b82121;
+      outline: none;
+      
+    }
+  }
+}
+.closeUpload{
+  .swal-button--one{
+      background-color: #b82121;
+      outline: none;
+      
+    }
+    .swal-button--one:hover{
+      background-color: #b82121;
+      
+    }
+}
 
+
+.file-info{
+  .swal-button-container{
+    .swal-button--minimize{
+      background-color: #969696;
+    }
+    .swal-button--close{
+      background-color: #5d8ed3;
+      outline: none;
+    }
+  }
+  
+}
 .blue-gradul-button{
 
   box-sizing: border-box;

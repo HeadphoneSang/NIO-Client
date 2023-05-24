@@ -1,19 +1,21 @@
 import { app, protocol, BrowserWindow,Menu,Tray, ipcMain} from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import{powerSaveBlocker} from 'electron'
 import handlers from './eventHandlers.js'
 import path from 'path'
+import upload from './upload.js';
+import ws from './ws.js';
 const trayIconPath = process.env.NODE_ENV === 'development' ? path.join(__dirname,'../public/icons/ICON.png') : "./ICON.png"
 const winURL = process.env.NODE_ENV === 'development' ? `http://localhost:8080` : `file://${__dirname}/index.html`
 var appTray
 var win;
 const isDevelopment = process.env.NODE_ENV !== 'production'
-powerSaveBlocker.start('prevent-app-suspension')
+// console.log(powerSaveBlocker)
+// powerSaveBlocker.start('prevent-app-suspension')
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
-Menu.setApplicationMenu(null)
+// Menu.setApplicationMenu(null)
 //删除工具栏
 async function createWindow() {
   // Create the browser window.
@@ -75,12 +77,14 @@ app.on('ready', async () => {
     {
         label: "切换账号",        
         click: async function() {
-          
           if(handlers.winCache.mainWin!==null){
+            ws.cancelThisMissions();
+            upload.clearTaskQueue();
             handlers.winCache.mainWin.webContents.session.removeAllListeners('will-download')
             ipcMain.emit('clearAllQuest')
             await handlers.winCache.mainWin.webContents.session.closeAllConnections()
-            ipcMain.removeAllListeners('download')
+            ipcMain.removeAllListeners('download');
+            ipcMain.removeHandler('commitMission');
             handlers.winCache.mainWin.destroy() 
             win.show()
           }    
@@ -91,13 +95,16 @@ app.on('ready', async () => {
         click: function() {
             if(handlers.winCache.mainWin!==null)
             {
-              handlers.winCache.mainWin.close()
+              handlers.winCache.mainWin.show();
+              handlers.winCache.mainWin.close();
             }else
               app.quit();
         }
     }
   ]
   appTray = new Tray(trayIconPath);
+
+  appTray.setContextMenu(Menu.buildFromTemplate([]));
     //图标的上下文菜单
   const contextMenu = Menu.buildFromTemplate(trayMenuTemplate);
   //设置此托盘图标的悬停提示内容
@@ -125,7 +132,6 @@ if (isDevelopment) {
     })
   }
 }
-
 /**
  * 注册所有进程通信之间的监听器
  * @param {*} win 登录窗口对象 

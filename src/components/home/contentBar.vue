@@ -200,6 +200,7 @@ export default {
               title:this.title,
               fileList:res.data.list
             })
+
             return true
           }else{
             swal(data.msg)
@@ -240,6 +241,7 @@ export default {
       if(params.title===this.title){
         let res = await this.getFileList(params.modifier)
         if(res){
+          this.priorityFilesDir({title:this.title});
           this.freshView()
           this.resetCheckLength({title:this.title})
         }

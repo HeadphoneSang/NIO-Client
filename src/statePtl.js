@@ -1,0 +1,8 @@
+export default{
+    NEW_TASK: 0x01,
+    CONTINUE_TASK: 0x02,
+    KEEP_CONTINUE: 0X03,
+    CANCEL_CONTINUE: 0x04,
+    FILE_CHANGED: 0x05,
+    FILE_EXIST: 0x06
+}
