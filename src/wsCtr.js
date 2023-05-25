@@ -1,67 +1,126 @@
-import { client as WebSocketClient } from 'websocket';
+const WebSocketClient = require('websocket').client
 import CtrlPtl from './ctrlPtl';
+import { connection } from 'websocket';
 import StatePtl from './statePtl';
 import proUtil from './protocolUtil';
+import ws from './ws.js'
+import protocolUtil from './protocolUtil';
 var url;
+const allSockets = new Map();
 
+function toBytes(str,encoding){
+    var bytes = [];
+    var buff = new Buffer.from(str,encoding);
+    for(var i= 0; i< buff.length; i++){
+      var byteint = buff[i];
+      bytes.push(byteint);
+    }
+    return bytes;
+}
+/**
+ * 解析定长协议帧
+ * @param {*} msg 
+ * @returns 
+ */
+function parseFrame(msg){//将定长协议报文解析为帧
+    let buf = Buffer.from(toBytes(msg.utf8Data,msg.type));
+    return {
+        protocol: buf.readIntBE(0,4),
+        data: parseInt(buf.subarray(4).toString(msg.type))
+    }
+}
+/**
+ * 
+ * @param {*} frame 
+ * @param {*} fileObj 
+ * @param {connection} conn 
+ * @param {connection} dataConn 
+ */
+function handlerTaskCreating(frame,fileObj,conn,dataConn,data){
+    switch(frame.protocol & 0xf){
+        case StatePtl.CTRL_CREATED:{
+            ws.readFileSendToSocket(fileObj,dataConn,data);
+            setTimeout(() => {
+                conn.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_RUNNING|StatePtl.PING,0)));
+            }, 60000);
+            break;
+        }
+        case StatePtl.CTRL_FAILED:{
+            conn.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_RUNNING|StatePtl.CANCEL_CONTINUE,0)));
+            break;
+        }
+    }
+}
+/**
+ * 
+ * @param {*} frame 
+ * @param {*} fileObj 
+ * @param {connection} conn 
+ * @param {connection} dataConn 
+ * @param {*} data 
+ */
+function handlerTaskRunning(frame,fileObj,conn,dataConn,data){
+    switch(frame.protocol & 0xf){
+        case StatePtl.PONG:{
+            setTimeout(() => {
+                conn.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_RUNNING|StatePtl.PING,0)));
+            }, 60000);
+            break;
+        }
+    }
+}
+
+function handlerTaskClosed(frame,fileObj,conn,dataConn,data){
+    allSockets.delete(fileObj.uuid);
+    //调用closeSocket
+}
 export default{
     /**
      * 创建一个上传任务的控制连接
      * @param {*} fileObj 任务信息对象
+     * @param {connection} dataConn 数据连接的连接对象
      */
-    async createNewControlTask(fileObj){
+    async createNewControlTask(fileObj,dataConn,data){
         let client = new WebSocketClient();
         client.on('connect',(conn)=>{
-            allSockets.set(fileObj.tarPath,conn);
+            allSockets.set(fileObj.uuid,conn);
             // console.log(`${fileObj.name}连接已建立`)
             conn.on('error',(e)=>{
-                console.log(conn.closeReasonCode)
-            })
-            conn.on('closeConnect',()=>{
-                // console.log(111)
+                console.log(e)
             })
             conn.on('close',(e)=>{
-                // console.log(`${fileObj.name}连接已断开${e}`);
-                handlerTaskClosed(fileObj,client,conn);
+                handlerTaskClosed(fileObj,client,conn,dataConn,data);
             })
             conn.on('message',(msg)=>{
                 let frame = parseFrame(msg);
-                console.log(frame)
                 switch(frame.protocol& ~0xf){
                     case CtrlPtl.TASK_CREATING:
-                        handlerTaskCreating(frame,fileObj,conn);break;
-                    case CtrlPtl.TASK_RUNNING:
-                        handlerTaskRunning(frame,fileObj,conn);break;
-                    case CtrlPtl.TASK_FAILED:
-                        handlerTaskFailed(frame,fileObj,conn);break;
-                    case CtrlPtl.TASK_COMPLETED:
-                        handlerTaskCompleted(frame,fileObj,conn);break;
+                        handlerTaskCreating(frame,fileObj,conn,dataConn,data);break;
+                    case CtrlPtl.TASK_RUNNING:{
+                        handlerTaskRunning(frame,fileObj,conn,dataConn,data);break;
+                    }
                 }
             })
-            conn.send(JSON.stringify(proUtil.createFrame(CtrlPtl.TASK_CREATING|StatePtl.NEW_TASK,fileObj.size,{path:fileObj.tarPath,username:fileObj.username})));
+            conn.send(JSON.stringify(proUtil.createFrame(CtrlPtl.TASK_CREATING|StatePtl.CREATE_CTRL,0,{uuid:fileObj.uuid})));
         });
         client.on('connectFailed',(e)=>{
-            handlerTaskConnectFailed(e,fileObj,client);
+            
         });
         client.connect(url);
     },
-    /**
-     * 删除指定路径的任务
-     * @param {*} path 任务文件路径
-     */
-    closeSocket(path){
-        let socket = allSockets.get(path);
-        allSockets.delete(path);
-        if(socket!==null||socket!==undefined){
-            socket.forceClose = true;
-            console.log('readyClose')
-        }
-        else{
-            console.log(`${path}的连接不存在`)
-        }
+
+    deleteCtrlSocket(uuid){
+        allSockets.delete(uuid);
     },
     /**
-     * 取消掉所有的任务,删除对象
+     * 通过控制连接关闭socket通道
+     * @param {*} path 任务文件路径
+     */
+    closeSocket(uuid){
+        
+    },
+    /**
+     * 通过控制连接取消掉所有的任务,删除对象
      */
     cancelThisMissions(){
         allSockets.forEach(
@@ -70,8 +129,7 @@ export default{
              * @param {connection} socket 
              * @param {*} key 
              */(socket,key)=>{
-                socket.forceClose = true;
-                console.log('readyClose')
+                socket.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_RUNNING|StatePtl.CANCEL_CONTINUE,0,{uuid:key})));
         })
         allSockets.clear()
     },
@@ -88,5 +146,8 @@ export default{
      */
     setUrl(u){
         url = `ws${u.substring(u.indexOf(':'))}/ws`
+    },
+    getCtrSocket(uuid){
+        return allSockets.get(uuid);
     }
 }

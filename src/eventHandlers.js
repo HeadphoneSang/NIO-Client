@@ -7,6 +7,7 @@ import factory from './windowFactory.js'
 import fs from 'fs';
 import upload from './upload.js';
 import ws from './ws.js';
+import wsCtr from "./wsCtr.js";
 const path = require("path")
 const { initDownload } = require('./download.js')
 const configPath = process.env.NODE_ENV === 'development' ? path.join(__dirname, '../config.json') : path.join(process.cwd(), 'config.json');
@@ -42,6 +43,7 @@ export default {
                 initDownload(winCache,config).downloadObj
                 ws.setWin(homeWin);
                 ws.setUrl(url);
+                wsCtr.setUrl(url);
                 ipcMain.handle('commitMission',(e,args)=>{
                     return upload.addDownloadQuest(JSON.parse(args))
                 })
@@ -153,8 +155,8 @@ export default {
             })
         },
         onForceDeleteUploadTask(){
-            ipcMain.handle("onForceDeleteUploadTask",(e,key)=>{
-                ws.closeSocket(key);
+            ipcMain.handle("onForceDeleteUploadTask",(e,key,uuid)=>{
+                ws.closeSocket(key,uuid);
                 upload.deleteMainUploadTask(key);
                 return true;
             })

@@ -104,6 +104,4 @@ function getGuid() {
 
 app.config.globalProperties.$guid = getGuid
 
-app.config.globalProperties.$upload = socketUpload;
-
 

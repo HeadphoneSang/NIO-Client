@@ -105,7 +105,14 @@ export default {
                 if(!confirm){
                     return;
                 }else{
-                    await ipcRenderer.invoke('onForceDeleteUploadTask',item.tarPath);
+                    if(item.status===6){
+                        return swal({
+                            icon:"warning",
+                            text:"网络连接错误...请稍后",
+                            title:"关闭提示"
+                        })
+                    }
+                    await ipcRenderer.invoke('onForceDeleteUploadTask',item.tarPath,item.uuid);
                 }
                 
             }

@@ -1,5 +1,4 @@
 const WebSocketClient = require('websocket').client
-const crypto = require('crypto');
 const fs = require('fs')
 const AsyncLock = require('async-lock');
 const lock = new AsyncLock();
@@ -9,6 +8,8 @@ import proUtil from './protocolUtil';
 import { connection } from 'websocket';
 import { BrowserWindow } from 'electron';
 import upload from './upload.js'
+import wsCtr from './wsCtr.js';
+import protocolUtil from './protocolUtil';
 const allSockets = new Map();
 const pSize = 256*1024;
 var url;
@@ -70,15 +71,21 @@ function readFileSendToSocket(fileObj,conn,startIndex){
  * @param {connection} conn 
  */
 function handlerTaskCreating(frame,fileObj,conn){
+    if(win.isDestroyed())
+        return;
     switch(frame.protocol & 0xf){
         case StatePtl.NEW_TASK:{//创建新任务
             win.webContents.send('uploadTaskCreated',fileObj.tarPath);
-            readFileSendToSocket(fileObj,conn,0);
+            wsCtr.createNewControlTask(fileObj,conn,frame.data);
+            // conn.send(JSON.stringify(proUtil.createFrame(CtrlPtl.TASK_CREATING|StatePtl.CREATE_CTRL,0)));
+            // readFileSendToSocket(fileObj,conn,0);
             break;
         }
         case StatePtl.CONTINUE_TASK:{//继续服务器缓存的任务
             win.webContents.send('uploadTaskCreated',fileObj.tarPath);
-            readFileSendToSocket(fileObj,conn,frame.data);
+            wsCtr.createNewControlTask(fileObj,conn,frame.data);
+            // readFileSendToSocket(fileObj,conn,frame.data);
+            // conn.send(JSON.stringify(proUtil.createFrame(CtrlPtl.TASK_CREATING|StatePtl.CREATE_CTRL,0)));
             break;
         }
         case StatePtl.FILE_EXIST:{
@@ -102,14 +109,18 @@ function handlerTaskCreating(frame,fileObj,conn){
  * @param {connection} conn 
  */
 function handlerTaskCompleted(frame,fileObj,conn){
+    if(win.isDestroyed())
+        return;
     win.webContents.send("uploadTaskProgress",fileObj.tarPath,fileObj.size);
     fileObj.sendByte = fileObj.size
     lock.acquire('deleteUploadItem',(done)=>{
         upload.deleteMainUploadTask(fileObj.tarPath);
         win.webContents.send('uploadTaskCompleted',fileObj.tarPath);
+        conn.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_COMPLETED,0)));
         done();
     })
-    conn.send(JSON.stringify({protocol:CtrlPtl.TASK_COMPLETED,data:0}));
+    
+    
     /**
      * 向渲染线程发送成功和成功的任务的id,删除sockets里面的任务
      * 渲染线程也删除表中的对象和下载列表里的对象，删除列表对象方法锁起来
@@ -130,9 +141,9 @@ function handlerTaskCompleted(frame,fileObj,conn){
 function handlerTaskRunning(frame,fileObj,conn){
     fileObj.sendByte = frame.data;
     if(conn.forceClose){
-        conn.sendCloseFrame(1000,(err)=>{
-            console.log(err);
-        });
+        // conn.sendCloseFrame(1000,(err)=>{
+        //     console.log(err);
+        // });
         return;
     }
     if(win.isDestroyed()){
@@ -166,7 +177,6 @@ function handlerTaskFailed(frame,fileObj,conn){
  * @param {connection} conn
  */
 function handlerTaskClosed(fileObj,client,conn){
-    console.log('close')
     let residueAmount = fileObj.size - fileObj.sendByte;
     if(residueAmount>0){//是否还存在未上传的字节
         if(win.isDestroyed()||(conn.forceClose!=undefined&&conn.forceClose))
@@ -180,7 +190,10 @@ function handlerTaskClosed(fileObj,client,conn){
             client.connect(url);
         },3000);
     }else//完整上传
+    {
         allSockets.delete(fileObj.tarPath);
+        wsCtr.closeSocket(fileObj.uuid);
+    }
 }
 
 /**
@@ -204,6 +217,7 @@ function handlerTaskConnectFailed(e,fileObj,client,conn){
             },3000);
         }else{
             allSockets.delete(fileObj.tarPath);
+            wsCtr.closeSocket(fileObj.uuid);
             // console.log('请求超时,任务失败：'+fileObj.reconnTime);
         }
     }else{
@@ -218,6 +232,14 @@ function handlerTaskConnectFailed(e,fileObj,client,conn){
 }
 
 export default{
+
+    /**
+     * 创建一个数据连接和控制连接的组合任务
+     * @param {*} fileObj 上传文件对象
+     */
+    async createNewCombineTask(fileObj){
+        createNewTask(fileObj);
+    },
     /**
      * 创建一个上传任务
      * @param {*} fileObj 任务信息对象
@@ -239,7 +261,6 @@ export default{
             })
             conn.on('message',(msg)=>{
                 let frame = parseFrame(msg);
-                console.log(frame)
                 switch(frame.protocol& ~0xf){
                     case CtrlPtl.TASK_CREATING:
                         handlerTaskCreating(frame,fileObj,conn);break;
@@ -251,7 +272,7 @@ export default{
                         handlerTaskCompleted(frame,fileObj,conn);break;
                 }
             })
-            conn.send(JSON.stringify(proUtil.createFrame(CtrlPtl.TASK_CREATING|StatePtl.NEW_TASK,fileObj.size,{path:fileObj.tarPath,username:fileObj.username})));
+            conn.send(JSON.stringify(proUtil.createFrame(CtrlPtl.TASK_CREATING|StatePtl.NEW_TASK,fileObj.size,{path:fileObj.tarPath,username:fileObj.username,uuid:fileObj.uuid})));
         });
         client.on('connectFailed',(e)=>{
             handlerTaskConnectFailed(e,fileObj,client);
@@ -262,16 +283,24 @@ export default{
      * 删除指定路径的任务
      * @param {*} path 任务文件路径
      */
-    closeSocket(path){
+    closeSocket(path,uid){
         let socket = allSockets.get(path);
+        socket.forceClose = true;
         allSockets.delete(path);
-        if(socket!==null||socket!==undefined){
-            socket.forceClose = true;
-            console.log('readyClose')
+        /**
+         * @type {connection}
+         */
+        let ctlConn = wsCtr.getCtrSocket(uid);
+        if(ctlConn!=null){
+            ctlConn.c
+            ctlConn.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_RUNNING|StatePtl.CANCEL_CONTINUE,0,{uuid:uid})));
         }
-        else{
-            console.log(`${path}的连接不存在`)
-        }
+        // if(socket!==null||socket!==undefined){
+        //     socket.forceClose = true;
+        // }
+        // else{
+        //     console.log(`${path}的连接不存在`)
+        // }
     },
     /**
      * 取消掉所有的任务,删除对象
@@ -284,8 +313,8 @@ export default{
              * @param {*} key 
              */(socket,key)=>{
                 socket.forceClose = true;
-                console.log('readyClose')
         })
+        wsCtr.cancelThisMissions();
         allSockets.clear()
     },
     /**
@@ -301,5 +330,20 @@ export default{
      */
     setUrl(u){
         url = `ws${u.substring(u.indexOf(':'))}/ws`
+    },
+    readFileSendToSocket(fileObj,conn,startIndex){
+        const reader = fs.createReadStream(fileObj.oriPath,{
+            start:startIndex,
+            highWaterMark: pSize,
+        });
+        reader.on('data',(chunk)=>{
+            if(conn.state=='open')
+                conn.send(chunk);
+            else
+                reader.close();
+        });
+        // reader.on('end',()=>{
+        //     console.log(`${fileObj.name}读取完毕`);
+        // });
     }
 }

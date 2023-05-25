@@ -16,7 +16,7 @@ export default{
         if(size>=maxTask)
             return false;
         uploadQueue[size++] = fileObj;
-        ws.createNewTask(fileObj)
+        ws.createNewTask(fileObj);
         return true;
     },
     removeTaskByPath(path){

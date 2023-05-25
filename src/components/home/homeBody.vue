@@ -314,7 +314,8 @@ export default {
                       status:0,//0 等待队列、1上传准备 2上传中 3上传完成 4上传失败 5网络错误 6重新连接中
                       bIndex:0,
                       sendByte:0,
-                      type:file.path.substring(file.path.lastIndexOf('.')+1)
+                      type:file.path.substring(file.path.lastIndexOf('.')+1),
+                      uuid:this.$guid()
                     }
                     items.push(obj);
                 }

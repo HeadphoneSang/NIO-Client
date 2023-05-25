@@ -218,11 +218,19 @@ export default {
                   closeOnClickOutside:false,
                 })
                 if(res=="true"){
-                    let {data} = await this.$http.post("/file/deleteFileByItems",{
-                        username:this.userInfo.username,
-                        items:list
-                    })
-                    if(data){
+                    let piece = 30;
+                    let pieceSize = list.length/piece;
+                    let f = true;
+                    for(let i = 0;i<pieceSize;i++){
+                        let b = i*piece;
+                        let subList = list.slice(b,b+piece);
+                        let {data} = await this.$http.post("/file/deleteFileByItems",{
+                            username:this.userInfo.username,
+                            items:subList
+                        })
+                        f&=data;
+                    }
+                    if(f){
                         swal({
                             text:"删除成功",
                             icon:"success"
@@ -236,7 +244,7 @@ export default {
                     swal.close()
                 }
             } catch (error) {
-                console.log(e)
+                console.log(error)
                 swal("网络请求出错")
             }finally{
                 bus.emit("needFresh",this.title)

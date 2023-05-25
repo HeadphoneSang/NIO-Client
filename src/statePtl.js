@@ -4,5 +4,10 @@ export default{
     KEEP_CONTINUE: 0X03,
     CANCEL_CONTINUE: 0x04,
     FILE_CHANGED: 0x05,
-    FILE_EXIST: 0x06
+    FILE_EXIST: 0x06,
+    CREATE_CTRL: 0x07,
+    CTRL_CREATED: 0x08,
+    CTRL_FAILED: 0x09,
+    PING:0xa,
+    PONG:0xb
 }
