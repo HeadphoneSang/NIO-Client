@@ -1,12 +1,23 @@
 <template>
   <div class="body-container" @contextmenu.stop="clickBody">
+    
     <div class="top-bar">
         <!-- <button @click.prevent="showMsg('测试标题一个','我是顶真我喜欢抽瑞克五代111111111111111111111','msg')">test</button> -->
         <!-- <input type="checkbox" id="checkAll" @click="selectAll({title:title})" v-model="checkAll"> -->
         <label>共{{ pathMap[title].fileList.length }}个</label>
     </div>
-    <div class="files-container"> 
-        <FileItem :item="item" v-for="(item,index) in pathMap[title].fileList" :key="index" :press-shirft="pressShirft" :pressCtrl="pressCtrl" :index="index" :father-ttitle="title" @selectMore="onSelectMore" @dblclick="onDbClickFile(item)"></FileItem>
+    <div class="files-container">
+        <div class="no-records" v-if="pathMap[title].fileList.length===0">
+            <img :src="getEmptyIcon()">
+            <div class="title">这是一个空白区域</div>
+            <div class="text">
+                {{ getEmptyText() }}
+            </div>
+            <div class="text">
+                试着去操作一下吧
+            </div>
+        </div>
+        <FileItem :item="item" v-for="(item,index) in pathMap[title].fileList" :key="item.modifier" :press-shirft="pressShirft" :pressCtrl="pressCtrl" :index="index" :father-ttitle="title" @selectMore="onSelectMore" @dblclick="onDbClickFile(item)"></FileItem>
     </div>
     <div :class="showMenu?'showSub border-shadow':'hiddenSub'" id="main" :style="{left:mouseX+'px',top:mouseY+'px'}">
         <div class="func-container" @click.stop="clickMenu('createDir')">新建文件夹</div>
@@ -66,6 +77,10 @@ export default {
             pressShirft:false,
             press:false,
             loading:false,
+            page:0,
+            isLoading:false,//节流
+            containerHeight: 0,
+            innerHeight:0,
             bIndex:-1,
             eIndex:-1,
             unshow:(e)=>{
@@ -97,6 +112,44 @@ export default {
     },
     methods:{
         ...mapMutations(['checkInRange','setFileList','switchPostPath','switchPrePath','pointContent','selectAll','priorityFilesDir']),
+        getEmptyIcon(){
+            switch(this.title){
+                case "files":{
+                    return require('@/assets/upload.png');
+                }
+                case "favorite":{
+                    return require('@/assets/collect.png')
+                }
+                case "recycle":{
+                    return require('@/assets/recycle0.png')
+                }
+                case "lock":{
+                    return require('@/assets/lock0.png')
+                }
+                default :{
+                    return require("@/assets/custom.png")
+                }
+            }
+        },
+        getEmptyText(){
+            switch(this.title){
+                case "files":{
+                    return "试着右键空白区域上传文件吧";
+                }
+                case "favorite":{
+                    return "试着将一个文件添加到收藏"
+                }
+                case "recycle":{
+                    return "试着将没用的文件加入到回收站吧"
+                }
+                case "lock":{
+                    return "试着将保密的文件加入密码箱中"
+                }
+                default :{
+                    return "我也不知道说什么"
+                }
+            }
+        },
         onDbClickFile(item){
             if(item.type=="directory"){
                 this.switchPostPath({
@@ -473,6 +526,24 @@ export default {
             box-sizing: border-box;
             padding:
             50px 10px 60px 10px;
+            .no-records{
+                user-select: none;
+                position: absolute;
+                top: calc(50% - 150px);
+                left: calc(50% - 120px);
+                img{
+                    width: 150px;
+                }
+                .title{
+                    font-size: 15px;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                }
+                .text{
+                    font-size: 14px;
+                    color: #838383;
+                }
+            }
         }
     }
 </style>

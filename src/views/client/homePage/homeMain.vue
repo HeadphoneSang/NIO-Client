@@ -22,17 +22,34 @@
       </div>
       <!-- 左侧功能栏选项等等 -->
 
-
       <!-- 左侧右下角用户信息等等 -->
-      <div class="user-info cursor-pointer" @click="navToUserInfo">
-        <div class="head">
-          <img :src="userInfo.head" alt="">
-          <div class="nick">
-            {{ userInfo.nick!==''?userInfo.nick:userInfo.username }}
+      <div class="user-info cursor-pointer">
+        <div class="top">
+          <div class="space-show">
+            <div class="name">{{ (totalSpace-freeSpace).toFixed(2) }}GB/{{ totalSpace }}GB</div>
+            <div class="progress">
+              <div class="progress-bar" role="progressbar" :style="'width: '+progress+'%'" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+          <div class="now-place">
+            <div class="top">
+              <img src="@/assets/server.png" alt="">
+              当前服务器
+            </div>
+            <div class="bottom">{{this.$http.defaults.baseURL!=undefined?(this.$http.defaults.baseURL.replace("http://","")):''}}</div>
+            
           </div>
         </div>
-        <div class="info">
-          <img src="@/assets/info.png" alt="">
+        <div class="bottom" @click="navToUserInfo">
+          <div class="head">
+            <img :src="userInfo.head" alt="">
+            <div class="nick">
+              {{ userInfo.nick!==''?userInfo.nick:userInfo.username }}
+            </div>
+          </div>
+          <div class="info">
+            <img src="@/assets/info.png" alt="">
+          </div>
         </div>
       </div>
       <!-- 左侧右下角用户信息等等 -->
@@ -56,8 +73,6 @@ const lock = new AsyncLock();
 import swal from 'sweetalert'
 import mainBus from '@/views/mainBus.js'
 import Message from '@/components/universal/messageBar.vue'
-import{powerSaveBlocker} from 'electron'
-import { connection } from 'websocket'
 
 export default {
   components:{
@@ -65,7 +80,10 @@ export default {
     Message
   },
   computed:{
-    ...mapState(['showMove','userInfo','uploadQueue','downloadQueue'])
+    ...mapState(['showMove','userInfo','uploadQueue','downloadQueue']),
+    progress(){
+      return (((this.totalSpace-this.freeSpace)*100)/this.totalSpace).toFixed(0);
+    }
   },
   data(){
     return {
@@ -73,6 +91,8 @@ export default {
       msgContent:"",
       msgTitle:"",
       uploadMap:new Map(),
+      totalSpace:1,
+      freeSpace:1,
       functions:[
         {
           name:'文件',
@@ -107,6 +127,19 @@ export default {
     }
   },
   methods:{
+    async getSpace(){
+      try{
+        let {data:total} = await this.$http.get('/file/getTotalSpace');
+        this.totalSpace = (total/1024/1024/1024).toFixed(2);
+        let {data:free} = await this.$http.get('/file/getFreeSpace');
+        this.freeSpace = (free/1024/1024/1024).toFixed(2);
+        console.log(`${this.totalSpace}+${this.freeSpace}`)
+      }catch(e){
+        console.log(e)
+        this.freeSpace = 0;
+        this.totalSpace = 1;
+      }
+    },
     navToUserInfo(){
       this.$router.push('/homePage/userInfo')
       this.pageName = "用户信息"
@@ -325,6 +358,9 @@ export default {
     this.$nextTick(()=>{
         // console.log(this.$refs.msg) // 输出实例
     })
+  },
+  updated(){
+    this.getSpace()
   }
 }
 </script>
@@ -397,30 +433,94 @@ export default {
       }
       .user-info{
         display: flex;
-        align-items: center;
-        border-top: 1px solid #e1e1e1;
-        box-sizing: border-box;
-        padding: 20px 0px 10px 0px;
-        justify-content: space-between;
-        background-color: #F5F5F6;
-        user-select: none;
-        .head{
+        flex-direction: column;
+        .bottom{
           display: flex;
           align-items: center;
-          div{
-            margin-left: 10px;
-            font-size: 15px;
-            color: #3b3b3b;
+          border-top: 1px solid #e1e1e1;
+          box-sizing: border-box;
+          padding: 20px 0px 5px 0px;
+          justify-content: space-between;
+          background-color: #F5F5F6;
+          user-select: none;
+          .head{
+            display: flex;
+            align-items: center;
+            div{
+              margin-left: 10px;
+              font-size: 15px;
+              color: #3b3b3b;
+            }
+            img{
+              height: 40px;
+              background-color: #E4E6EE;
+              border-radius: 50%;
+            }
           }
-          img{
-            height: 40px;
-            background-color: #E4E6EE;
-            border-radius: 50%;
+          .info{
+            img{
+              height: 20px;
+            }
           }
         }
-        .info{
-          img{
-            height: 20px;
+        .top{
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 10px;
+          width: 100%;
+          .space-show{
+            width: 100%;
+            .name{
+              text-align: left;
+              font-size: 12px;
+              color: #3b3b3b;
+            }
+            .progress{
+              margin-top: 5px;
+              width: 100%;
+              height: 8px;
+              .progress-bar{
+                background-color: #919ff0;
+              }
+            }
+          }
+          .now-place{
+            box-sizing: border-box;
+            padding: 5px 5px 5px 0;
+            font-size: 14px;
+            width: 100%;
+            text-align: center;
+            border: 2px solid #dfdfdf;
+            border-radius: 20px;
+            margin-top: 10px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            .top{
+              margin: 0;
+              padding: 0;
+              width: 100%;
+              font-size: 16px;
+              color: #3e3e3e;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              flex-direction: row;
+              img{
+                width: 20px;
+                height: 20px;
+                margin-right: 7px;
+              }
+            }
+            .bottom{
+              border: none;
+              margin: 0;
+              padding: 0;
+              font-size: 12px;
+              color: #606060;
+            }
           }
         }
       }

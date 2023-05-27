@@ -539,16 +539,24 @@ export default {
                 return this.ico = require('@/assets/typesIcon/css.png')
             }
             if(this.item.type.match(/(jpg|jpeg|gif|png|psd|tga|pcx)/)!==null){
-                return this.ico = require('@/assets/typesIcon/image.png')
+                // return this.ico = require('@/assets/typesIcon/image.png')
+                return this.ico = this.$http.defaults.baseURL+"/file/getResourceByModifier/"+this.item.modifier;
             }
+            
             this.ico = require('@/assets/typesIcon/invalid.png')
         }
     },
     created(){
+        if(this.item.type.match(/(jpg|jpeg|gif|png|psd|tga|pcx)/)!==null){
+            this.ico = require('@/assets/typesIcon/image.png')
+        }
         this.initIcon()
+        
+        
     },mounted(){
         document.addEventListener('click', this.unshow,true)  
-        document.addEventListener('contextmenu', this.unshow,true)  
+        document.addEventListener('contextmenu', this.unshow,true);
+         
     },
     beforeUnmount(){
         document.removeEventListener('click', this.unshow, true)
@@ -598,6 +606,7 @@ export default {
             img{
                 width: 80px;
                 margin-bottom: 10px;
+                max-height: 100px;
             }
             .name{
                 font-size: 14px;
