@@ -6,7 +6,7 @@
         <!-- <input type="checkbox" id="checkAll" @click="selectAll({title:title})" v-model="checkAll"> -->
         <label>共{{ pathMap[title].fileList.length }}个</label>
     </div>
-    <div class="files-container">
+    <div class="files-container" @dragover.prevent @drop="handleDrop">
         <div class="no-records" v-if="pathMap[title].fileList.length===0">
             <img :src="getEmptyIcon()">
             <div class="title">这是一个空白区域</div>
@@ -78,6 +78,7 @@ export default {
             press:false,
             loading:false,
             page:0,
+            isShowUpload:false,
             isLoading:false,//节流
             containerHeight: 0,
             innerHeight:0,
@@ -112,6 +113,59 @@ export default {
     },
     methods:{
         ...mapMutations(['checkInRange','setFileList','switchPostPath','switchPrePath','pointContent','selectAll','priorityFilesDir']),
+        async handleDrop(event) {
+            if(this.title!=="files")
+                return;
+            event.preventDefault();
+            let files = event.dataTransfer.files;
+            let res = await swal({
+                title:"上传提示",
+                className: "dragUpload",
+                icon: require("@/assets/uploadPlace.png"),
+                text:`你确定要将${files.length}个文件上传到当前目录吗?`,
+                buttons:{
+                    no:{
+                        text:"取消",
+                        value: false
+                    },
+                    yes:{
+                        text:"确定",
+                        value:true
+                    }
+                }
+            });
+            if(!res)
+                return;
+            let items = []
+            let length = this.pathMap[this.title].stack.length
+            let directory = length>0?this.pathMap[this.title].stack[length-1].modifier:""
+            try{
+                let {data:parPath} = await this.$http.get(`/file/getPathByModifier/${directory}`);
+                for(let i = 0;i<files.length;i++){
+                    let file = files[i];
+                    let obj = {
+                      name:file.name,
+                      username:this.userInfo.username,
+                      oriPath:file.path,
+                      tarPath:`${parPath}${file.name}`,
+                      size:files[i].size,
+                      progress:0,
+                      status:0,//0 等待队列、1上传准备 2上传中 3上传完成 4上传失败 5网络错误 6重新连接中
+                      bIndex:0,
+                      sendByte:0,
+                      type:file.path.substring(file.path.lastIndexOf('.')+1),
+                      uuid:this.$guid()
+                    }
+                    items.push(obj);
+                }
+                mainBus.emit('upload',items)
+            }
+            catch(e){
+                console.log(e);
+                swal('网络连接错误');
+                return;
+            }
+        },
         getEmptyIcon(){
             switch(this.title){
                 case "files":{
@@ -134,7 +188,7 @@ export default {
         getEmptyText(){
             switch(this.title){
                 case "files":{
-                    return "试着右键空白区域上传文件吧";
+                    return "试着拖拽文件或右键空白区域上传文件吧";
                 }
                 case "favorite":{
                     return "试着将一个文件添加到收藏"

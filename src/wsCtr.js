@@ -5,7 +5,11 @@ import StatePtl from './statePtl';
 import proUtil from './protocolUtil';
 import ws from './ws.js'
 import protocolUtil from './protocolUtil';
+const AsyncLock = require('async-lock');
+const lock = new AsyncLock();
+
 var url;
+var isConnect = false;
 const allSockets = new Map();
 
 function toBytes(str,encoding){
@@ -80,33 +84,34 @@ export default{
      * @param {*} fileObj 任务信息对象
      * @param {connection} dataConn 数据连接的连接对象
      */
-    async createNewControlTask(fileObj,dataConn,data){
-        let client = new WebSocketClient();
-        client.on('connect',(conn)=>{
-            allSockets.set(fileObj.uuid,conn);
-            // console.log(`${fileObj.name}连接已建立`)
-            conn.on('error',(e)=>{
-                console.log(e)
-            })
-            conn.on('close',(e)=>{
-                handlerTaskClosed(fileObj,client,conn,dataConn,data);
-            })
-            conn.on('message',(msg)=>{
-                let frame = parseFrame(msg);
-                switch(frame.protocol& ~0xf){
-                    case CtrlPtl.TASK_CREATING:
-                        handlerTaskCreating(frame,fileObj,conn,dataConn,data);break;
-                    case CtrlPtl.TASK_RUNNING:{
-                        handlerTaskRunning(frame,fileObj,conn,dataConn,data);break;
+    createNewControlTask(fileObj,dataConn,data){
+        lock.acquire('createCtrlConnect',(done)=>{
+            let client = new WebSocketClient();
+            client.on('connect',(conn)=>{
+                allSockets.set(fileObj.uuid,conn);
+                // console.log(`${fileObj.name}连接已建立`)
+                conn.on('error',(e)=>{
+                    console.log(e)
+                })
+                conn.on('close',(e)=>{
+                    handlerTaskClosed(fileObj,client,conn,dataConn,data);
+                })
+                conn.on('message',(msg)=>{
+                    let frame = parseFrame(msg);
+                    switch(frame.protocol& ~0xf){
+                        case CtrlPtl.TASK_CREATING:
+                            handlerTaskCreating(frame,fileObj,conn,dataConn,data);break;
+                        case CtrlPtl.TASK_RUNNING:{
+                            handlerTaskRunning(frame,fileObj,conn,dataConn,data);break;
+                        }
                     }
-                }
-            })
-            conn.send(JSON.stringify(proUtil.createFrame(CtrlPtl.TASK_CREATING|StatePtl.CREATE_CTRL,0,{uuid:fileObj.uuid})));
-        });
-        client.on('connectFailed',(e)=>{
-            
-        });
-        client.connect(url);
+                })
+                conn.send(JSON.stringify(proUtil.createFrame(CtrlPtl.TASK_CREATING|StatePtl.CREATE_CTRL,0,{uuid:fileObj.uuid})));
+            });
+            client.connect(url);
+            isConnect = true;
+            done();
+        })
     },
 
     deleteCtrlSocket(uuid){

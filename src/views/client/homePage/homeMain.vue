@@ -270,6 +270,11 @@ export default {
         this.uploadQueue.push(obj);
       }
       this.commitQueueToupload()
+      swal({
+        icon:"success",
+        title:"上传提示",
+        text:"已加入上传队列"
+      })
     });
     mainBus.on('deleteUploadQueue',(key)=>{
       lock.acquire('updateUploadQueue',async (done)=>{

@@ -27,6 +27,21 @@ html,body{
 .file-info{
   width: 350px;
 }
+.dragUpload{
+  width: 450px;
+  .swal-icon{
+    margin: 0;
+    margin-top: 15px;
+  }
+  .swal-button--yes{
+      background-color: #513ccb;
+      outline: none;
+  }
+  .swal-button--yes:hover{
+      background-color: #513ccb;
+      outline: none;
+  }
+}
 .cursor-pointer{
   cursor: url('@/assets/point.png'), pointer;
 }

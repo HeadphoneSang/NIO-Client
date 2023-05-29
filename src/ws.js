@@ -65,11 +65,16 @@ function readFileSendToSocket(fileObj,conn,startIndex){
 }
 
 /**
- * 处理任务创建阶段的协议
- * @param {*} frame  
- * @param {*} fileObj 
- * @param {connection} conn 
- */
+* 
+*  续传还是新传
+*  续传根据回复报文的坐标将文件读入切片写出
+*  新传直接将坐标置0分片读入写出
+*  通知渲染线程更新任务状态
+*
+* @param {*} frame  
+* @param {*} fileObj 
+* @param {connection} conn 
+*/
 function handlerTaskCreating(frame,fileObj,conn){
     if(win.isDestroyed())
         return;
@@ -94,12 +99,6 @@ function handlerTaskCreating(frame,fileObj,conn){
             break; 
         }
     }
-    /**
-     * 续传还是新传
-     *  续传根据回复报文的坐标将文件读入切片写出
-     *  新传直接将坐标置0分片读入写出
-     * 通知渲染线程更新任务状态
-     */
 }
 
 /**
@@ -119,8 +118,6 @@ function handlerTaskCompleted(frame,fileObj,conn){
         conn.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_COMPLETED,0)));
         done();
     })
-    
-    
     /**
      * 向渲染线程发送成功和成功的任务的id,删除sockets里面的任务
      * 渲染线程也删除表中的对象和下载列表里的对象，删除列表对象方法锁起来
@@ -141,9 +138,6 @@ function handlerTaskCompleted(frame,fileObj,conn){
 function handlerTaskRunning(frame,fileObj,conn){
     fileObj.sendByte = frame.data;
     if(conn.forceClose){
-        // conn.sendCloseFrame(1000,(err)=>{
-        //     console.log(err);
-        // });
         return;
     }
     if(win.isDestroyed()){
