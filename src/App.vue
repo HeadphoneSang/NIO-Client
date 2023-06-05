@@ -1,7 +1,11 @@
 <template>
   <router-view/>
 </template>
-
+<script>
+export default {
+  
+}
+</script>
 <style lang="less">
 html,body{
   cursor: url('@/assets/download.png'), pointer;
@@ -24,8 +28,115 @@ html,body{
     background-color: rgba(121, 122, 122, 0.45);
   }
 }
+.share{
+  width: 430px;
+  user-select: none;
+  font-family:"Arial","Microsoft YaHei","黑体","宋体",sans-serif;
+  .swal-footer{
+    background-color: #efefef;
+    margin-top: 35px;
+  }
+  .title{
+    width: 100%;
+    margin: 5px 0 10px 0;
+    font-size: 19px;
+    text-align: left;
+    font-weight: 600;
+    color: #363636;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    img{
+      width: 22px;
+      box-sizing: border-box;
+      padding: 4px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    img:hover{
+      background-color: #eaeaea;
+    }
+  }
+  .text{
+    width: 100%;
+    text-align: left;
+    color: #979797;
+    font-size: 13px;
+  }
+  .img-container{
+    margin-top: 20px;
+    img{
+      width: 120px;
+    }
+    .desc{
+      margin-top: 25px;
+      color: #4a4c4d;
+    }
+  }
+  .url-container{
+    width: 100%;
+    margin-top: 30px;
+    .url-title{
+      text-align: left;
+      font-size: 15px;
+    }
+    .url{
+      width: 100%;
+      text-align: left;
+      box-sizing: border-box;
+      padding: 10px 10px;
+      background-color: #f2f2f2;
+      color: #939393;
+      border-radius: 7px;
+      font-size: 14px;
+    }
+  }
+  .swal-button{
+    width: 90px;
+    height: 35px;
+    font-size: 15px;
+    padding: 5px;
+    font-weight: 500;
+    color: #ffffff;
+  }
+  .swal-button--uncopy{
+      background-color: #f89b4f;
+      outline: none;
+  }
+  .swal-button--uncopy:hover{
+      background-color: #d17e3b;
+      outline: none;
+  }
+  .swal-button--copy{
+      background-color: #513ccb;
+      outline: none;
+  }
+  .swal-button--copy:hover{
+      background-color: #352498;
+      outline: none;
+  }
+}
 .file-info{
   width: 350px;
+}
+.updateSwal{
+  widows: 450px;
+  .swal-button--donot{
+      background-color: #af2814;
+      outline: none;
+  }
+  .swal-button--donot:hover{
+      background-color: #861e0e;
+      outline: none;
+  }
+  .swal-button--do{
+      background-color: #1498af;
+      outline: none;
+  }
+  .swal-button--do:hover{
+      background-color: #05798e;
+      outline: none;
+  }
 }
 .dragUpload{
   width: 450px;

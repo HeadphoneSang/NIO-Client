@@ -4,18 +4,30 @@ import handlers from './eventHandlers.js'
 import path from 'path'
 import upload from './upload.js';
 import ws from './ws.js';
+import update from './update.js'
+const { autoUpdater } = require('electron-updater');
 const trayIconPath = process.env.NODE_ENV === 'development' ? path.join(__dirname,'../public/icons/ICON.png') : "./ICON.png"
 const winURL = process.env.NODE_ENV === 'development' ? `http://localhost:8080` : `file://${__dirname}/index.html`
 var appTray
 var win;
 const isDevelopment = process.env.NODE_ENV !== 'production'
+// Object.defineProperty(app,'isPackaged',{
+//   get(){
+//     return true;
+//   }
+// })
+
+// if (process.env.NODE_ENV === 'development') {
+//   autoUpdater.updateConfigPath = path.join(__dirname, 'win-unpacked/resources/app-update.yml')
+//   // mac的地址是'Contents/Resources/app-update.yml'
+// }
 // console.log(powerSaveBlocker)
 // powerSaveBlocker.start('prevent-app-suspension')
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
-// Menu.setApplicationMenu(null)
+Menu.setApplicationMenu(null)
 //删除工具栏
 async function createWindow() {
   // Create the browser window.
@@ -35,6 +47,7 @@ async function createWindow() {
   })
   registerListener(win)
   win.on('ready-to-show',()=>{
+    update.setWin(win);
     win.show()
   })
   // win.webContents.session.on('will-download',(event,item)=>{
@@ -139,4 +152,6 @@ if (isDevelopment) {
 const registerListener = function(win){
   Object.keys(handlers.handlers).forEach(e=>{handlers.handlers[e](win)})
 }
-
+export default{
+  isDevelopment:isDevelopment
+}

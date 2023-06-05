@@ -15,7 +15,17 @@
             </div>
             <div class="middle">
                 <div class="name">{{ item.name.length>maxNameLength?item.name.substring(0,maxNameLength)+'...': item.name }}</div>
-                <div class="status">{{getStatus(item.status)}}</div>
+                <div class="status">
+                    <div class="speed">
+                        <div class="size">
+                            {{ $formatSize(item.sendByte) }} / {{ $formatSize(item.size) }}
+                        </div>
+                        <div class="s">
+                            {{ $formatSize(item.speed) }}/S
+                        </div>
+                    </div>
+                    {{getStatus(item.status)}}
+                </div>
                 <div class="progress">
                     <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" :aria-valuenow="(item.progress*1).toFixed(0)" aria-valuemin="0" aria-valuemax="100" :style="'width: '+(item.progress*1).toFixed(0)+'%'">{{(item.progress*1).toFixed(2)}}%</div>
                 </div>
@@ -210,10 +220,19 @@ export default {
                 font-size: 14px;
             }
             .status{
+                display: flex;
+                width: 100%;
+                justify-content: space-between;
                 color: #7c7c7c;
                 font-size: 13px;
                 width: 100%;
                 text-align: right;
+                .speed{
+                    width: 90%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
             }
             
         }

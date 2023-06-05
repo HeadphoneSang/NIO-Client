@@ -26,11 +26,28 @@
 
 <script>
 import {ipcRenderer} from 'electron'
+import swal from 'sweetalert'
 export default {
+  props:{
+    isUpdate:{
+      type:Boolean,
+      required:true
+    }
+  },
   watch:{
     autoLogin:{
       handler(){
         window.localStorage.setItem("autoLogin",this.autoLogin)
+      }
+    },
+    isUpdate:{
+      handler(newV){
+        if(!newV&&this.autoLogin)
+        {  
+          this.login()
+        }else if(!newV){
+          swal.close()
+        }
       }
     }
   },
@@ -44,7 +61,7 @@ export default {
       autoLogin:false,
       showWarn:false,
       warnMsg:'',
-      loading:false
+      loading:false,
     }
   },
   methods:{
@@ -52,6 +69,13 @@ export default {
       this.showPassword = !this.showPassword
     },
     async login(){
+      if(this.isUpdate){
+        return swal({
+          title:"更新检查提示",
+          text:"请稍后...",
+          icon:"warning"
+        })
+      }
       if(this.loading||this.username==''||this.password==''){
         return
       }
@@ -82,6 +106,7 @@ export default {
           this.showWarn = true
       }finally{
         this.loading = false;
+        swal.close()
       }
       
     },
@@ -107,6 +132,10 @@ export default {
     }
   },
   async created(){
+
+    /**
+     * 自动东登录↓
+     */
     let autoLogin = window.localStorage.getItem("autoLogin")
     if(autoLogin!=null)
       this.autoLogin = autoLogin
@@ -119,6 +148,7 @@ export default {
         this.login()
       }
     }
+    
   }
 }
 </script>

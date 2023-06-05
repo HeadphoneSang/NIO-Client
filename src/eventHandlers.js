@@ -8,7 +8,9 @@ import fs from 'fs';
 import upload from './upload.js';
 import ws from './ws.js';
 import wsCtr from "./wsCtr.js";
+import update  from "./update.js";
 const path = require("path")
+const { autoUpdater } = require('electron-updater');
 const { initDownload } = require('./download.js')
 const configPath = process.env.NODE_ENV === 'development' ? path.join(__dirname, '../config.json') : path.join(process.cwd(), 'config.json');
 var configData = fs.readFileSync(configPath, 'utf-8');
@@ -20,8 +22,9 @@ const winCache = {
      */
     mainWin:null
 }
-var username
-var url
+var username;
+var url;
+var {version} = require("../package.json");
 if(config!=null&&config.stopSleep!=undefined){
     if(config.stopSleep){
         sleepId = powerSaveBlocker.start('prevent-app-suspension');
@@ -30,6 +33,7 @@ if(config!=null&&config.stopSleep!=undefined){
 
 export default {
     winCache:winCache,
+    id:username,
     handlers:{
         /**
          * 监听当用户点击了登录按钮后的处理
@@ -158,6 +162,23 @@ export default {
             ipcMain.handle("onForceDeleteUploadTask",(e,key,uuid)=>{
                 ws.closeSocket(key,uuid);
                 upload.deleteMainUploadTask(key);
+                return true;
+            })
+        },
+        onCheckUpdate(){
+            ipcMain.handle('checkUpdate',(e)=>{
+                let u = `${url}/update/checkUpdate/`
+                update.checkUpdateAvaible(u);
+            })
+        },
+        onUpdateStart(){
+            ipcMain.handle('startUpdate',(e)=>{
+                update.startUpdate();
+            })
+        },
+        onInstallUpdate(){
+            ipcMain.handle('installUpdate',(e)=>{
+                update.installUpdate()
                 return true;
             })
         }

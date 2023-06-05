@@ -6,7 +6,7 @@
     </div>
     <div class="place"></div>
     <div class="main-view">
-        <router-view></router-view>
+        <router-view @changeUpdate="changeUpdate"></router-view>
     </div>
     <div class="nav-bar" v-if="showNavBar">
         <a href="#" @click.prevent="backServer">
@@ -18,9 +18,14 @@
 
 <script>
 export default {
+    data(){
+        return {
+            isUpdate:false,
+        }
+    },
     computed:{
         showNavBar(){
-            return this.$route.fullPath.indexOf('initAddress')===-1
+            return (this.$route.fullPath.indexOf('initAddress')===-1)&&!this.isUpdate
         }
     },
     methods:{
@@ -30,6 +35,9 @@ export default {
                 window.localStorage.setItem("isRemeber",false)
                 this.$router.push('/mainEnter/initAddress/historyAddress')
             }
+        },
+        changeUpdate(update){
+            this.isUpdate = update;
         }
     }
 }

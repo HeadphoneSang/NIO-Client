@@ -110,7 +110,11 @@ export default {
                     progress:0,
                     downloading:false,
                     username:this.userInfo.username,
-                    type:item.type
+                    type:item.type,
+                    beforeTime: 0,
+                    sendByte: 0,
+                    size: 0,
+                    speed: 0
                 }
             })
             let flag = this.downloadQueue.length===0

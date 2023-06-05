@@ -291,6 +291,42 @@ export default createStore({
       }
     },
     /**
+     * 将文件排序,将目录排序到前方,双指针时间复杂度O(n)
+     * @param {*} state 
+     */
+    priorityFilesByTypes(state,params){
+      let arr = state.pathMap[params.title].fileList;
+      let cache = {};let types = [];let index = 0
+      arr.forEach(e=>{
+        if(cache[e.type]==undefined){
+          cache[e.type] = 1;
+          types[index++] = e.type;
+        }
+      })
+      types = types.sort();
+      if(params.increase!==1){
+        types.reverse();
+      }
+      let l=0,r = arr.length-1;
+      types.forEach(type => {
+        while(l<r){
+          while(l<r&&arr[l].type===type){
+            l++;
+          }
+          while(r>l&&arr[r].type!==type){
+            r--;
+          }
+          if(l==r){
+            r = arr.length-1;
+            break;
+          }
+          let temp = arr[l];
+          arr[l] = arr[r];
+          arr[r] = temp;
+        }
+      })
+    },
+    /**
      * 选中指定模块下的所有文件
      * @param {*} state 
      * @param {*} params 

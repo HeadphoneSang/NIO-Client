@@ -26,6 +26,12 @@
 <script>
 import swal from 'sweetalert';
 export default {
+  props:{
+    isUpdate:{
+      type:Boolean,
+      required:true
+    }
+  },
   data(){
     return {
       showPassword:false,
@@ -37,7 +43,7 @@ export default {
       autoLogin:false,
       showPassWarn:false,
       warnMsg:'',
-      loading:false
+      loading:false,
     }
   },
   methods:{
@@ -61,6 +67,13 @@ export default {
       }
     },
     async register(){
+      if(this.isUpdate){
+        return swal({
+          title:"更新检查提示",
+          text:"请稍后...",
+          icon:"warning"
+        })
+      }
       if(this.loading)
         return
       if(this.username==''||this.password!=this.confirmPassword){
@@ -111,6 +124,7 @@ export default {
     }
   },
   created(){
+
   }
 }
 </script>

@@ -133,7 +133,6 @@ export default {
         this.totalSpace = (total/1024/1024/1024).toFixed(2);
         let {data:free} = await this.$http.get('/file/getFreeSpace');
         this.freeSpace = (free/1024/1024/1024).toFixed(2);
-        console.log(`${this.totalSpace}+${this.freeSpace}`)
       }catch(e){
         console.log(e)
         this.freeSpace = 0;
@@ -200,7 +199,11 @@ export default {
       ipcRenderer.on('uploadTaskProgress',(e,key,data)=>{
         let fileObj =this.uploadMap.get(key); 
         if(fileObj!==null){
+          let now = (new Date()).valueOf();
+          fileObj.speed = (data - fileObj.sendByte)/((now-fileObj.beforeTime)/1000);
           fileObj.progress = ((data*100)/fileObj.size).toFixed(2);
+          fileObj.sendByte = data;
+          fileObj.beforeTime = now;
         }
       });
       ipcRenderer.on('uploadTaskCompleted',async (e,key)=>{
@@ -244,6 +247,16 @@ export default {
     let data = await ipcRenderer.invoke('loadedHome',"need");
     this.$http.defaults.baseURL = data[1];
     this.setUser({username:data[0]});
+    this.$http.interceptors.request.use(config=>{
+        config.headers['username'] = this.userInfo.username;
+        return config;//放行请求 *
+    },err=>{
+        swal({
+          title: "失败提示",
+          text: `网络请求失败: ${err}`,
+          icon: "error"
+        })
+    })
     this.registerUploadListener();
     setInterval(()=>{
       //下载轮询检查
@@ -284,8 +297,14 @@ export default {
           done();
         })
     });
-    ipcRenderer.on("downloadUpdateEvent",(data,evt)=>{
-      
+    ipcRenderer.on("downloadUpdateEvent",(data,evt,recieveData,total)=>{
+      let now = (new Date()).valueOf();
+      let f = this.downloadQueue[0];
+      if(f.size===0)
+        f.size = total;
+      f.speed = ((recieveData-f.sendByte)/((now-f.beforeTime)/1000)).toFixed(2);
+      f.beforeTime = now;
+      f.sendByte = recieveData;
       if(this.downloadQueue[0].status===2)
          this.changeDownloadFirstStatus(3)
       else{

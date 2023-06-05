@@ -130,12 +130,12 @@ const routes = [
           {
             path: 'register',
             name: 'register',
-            component:RegisterView 
+            component:RegisterView
           },
           {
             path: 'login',
             name: 'login',
-            component:LoginView 
+            component:LoginView
           },
         ]
       }

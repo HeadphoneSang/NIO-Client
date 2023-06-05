@@ -20,10 +20,22 @@
         <FileItem :item="item" v-for="(item,index) in pathMap[title].fileList" :key="item.modifier" :press-shirft="pressShirft" :pressCtrl="pressCtrl" :index="index" :father-ttitle="title" @selectMore="onSelectMore" @dblclick="onDbClickFile(item)"></FileItem>
     </div>
     <div :class="showMenu?'showSub border-shadow':'hiddenSub'" id="main" :style="{left:mouseX+'px',top:mouseY+'px'}">
-        <div class="func-container" @click.stop="clickMenu('createDir')">新建文件夹</div>
-        <div class="func-container" @click.stop="clickMenu('upload')">上传文件
+        <div class="func-container" @click.stop="clickMenu('createDir')">
+            <img src="@/assets/rightContext/createDir.png"/>
+            新建文件夹
         </div>
-        <div class="func-container" @click.stop="clickMenu('refresh')">刷新页面</div>
+        <div class="func-container" @click.stop="clickMenu('upload')">
+            <img src="@/assets/rightContext/upload.png"/>
+            上传文件
+        </div>
+        <div class="func-container" @click.stop="clickMenu('refresh')">
+            <img src="@/assets/rightContext/refresh.png"/>
+            刷新页面
+        </div>
+        <div class="func-container" @click.stop="clickMenu('sortByType')">
+            <img :src="up?require('@/assets/rightContext/increase.png'):require('@/assets/rightContext/decrease.png')"/>
+            按类型排序 
+        </div>
     </div>
     <DownloadBar :title="title" v-if="pathMap[title].checkLength>1"></DownloadBar>
     <div :class="loading?'spinner-border':'spinner-hidden'" role="status">
@@ -78,6 +90,7 @@ export default {
             press:false,
             loading:false,
             page:0,
+            up:1,
             isShowUpload:false,
             isLoading:false,//节流
             containerHeight: 0,
@@ -112,7 +125,7 @@ export default {
         }
     },
     methods:{
-        ...mapMutations(['checkInRange','setFileList','switchPostPath','switchPrePath','pointContent','selectAll','priorityFilesDir']),
+        ...mapMutations(['checkInRange','setFileList','switchPostPath','switchPrePath','pointContent','selectAll','priorityFilesDir','priorityFilesByTypes']),
         async handleDrop(event) {
             if(this.title!=="files")
                 return;
@@ -143,6 +156,15 @@ export default {
                 let {data:parPath} = await this.$http.get(`/file/getPathByModifier/${directory}`);
                 for(let i = 0;i<files.length;i++){
                     let file = files[i];
+                    console.log(file.type)
+                    if(file.type===""){
+                        await swal({
+                            title:"上传警告",
+                            icon:"warning",
+                            text:`${file.name}是一个文件夹!将被忽略`
+                        });
+                        continue;
+                    }
                     let obj = {
                       name:file.name,
                       username:this.userInfo.username,
@@ -153,6 +175,8 @@ export default {
                       status:0,//0 等待队列、1上传准备 2上传中 3上传完成 4上传失败 5网络错误 6重新连接中
                       bIndex:0,
                       sendByte:0,
+                      beforeTime:0,
+                      speed:0,
                       type:file.path.substring(file.path.lastIndexOf('.')+1),
                       uuid:this.$guid()
                     }
@@ -263,6 +287,11 @@ export default {
                     }
                     else
                         swal("此处不允许上传文件")                  
+                    break;
+                }
+                case 'sortByType':{
+                    this.priorityFilesByTypes({title:this.title,increase:this.up});
+                    this.up ^= 1;
                     break;
                 }
                 case 'refresh':{
@@ -421,6 +450,8 @@ export default {
                       status:0,//0 等待队列、1上传准备 2上传中 3上传完成 4上传失败 5网络错误 6重新连接中
                       bIndex:0,
                       sendByte:0,
+                      beforeTime:0,
+                      speed:0,
                       type:file.path.substring(file.path.lastIndexOf('.')+1),
                       uuid:this.$guid()
                     }
@@ -467,6 +498,7 @@ export default {
                 this.clickMenu('upload')
             }
         })
+        
 
     },
     mounted(){
@@ -527,7 +559,6 @@ export default {
         }   
         .showSub{
             width: 150px;
-            height: 110px;
             position: fixed;
             background-color: #ffffff;
             color: #000000;
@@ -539,9 +570,18 @@ export default {
             .func-container{
                 text-align: left;
                 box-sizing: border-box;
-                padding: 5px 10px;
-                font-size: 14px;
+                padding: 5px 10px 5px 5px;
+                font-size: 14.5px;
                 border-radius: 5px;
+                display: flex;
+                color: #383838;
+                cursor: pointer;
+                align-items: center;
+                justify-content: flex-start;
+                img{
+                    width: 15px;
+                    margin-right: 10px;
+                }
             }
             .func-container:hover{
                 background-color: #f4f4f4;

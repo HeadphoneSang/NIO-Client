@@ -15,7 +15,17 @@
             </div>
             <div class="middle">
                 <div class="name">{{ item.name.length>maxNameLength?item.name.substring(0,maxNameLength)+'...': item.name }}</div>
-                <div class="status">{{ checkStatus(item.status) }}</div>
+                <div class="status">
+                    <div class="speed">
+                        <div class="size">
+                            {{ $formatSize(item.sendByte) }} / {{ $formatSize(item.size) }}
+                        </div>
+                        <div class="s">
+                            {{ $formatSize(item.speed) }}/S
+                        </div>
+                    </div>
+                    {{ checkStatus(item.status) }}
+                </div>
                 <div class="progress">
                     <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" :style="'width: '+item.progress+'%'">{{item.progress}}%</div>
                 </div>
@@ -67,7 +77,6 @@ export default {
             }
         },
         initIcon(type){
-            console.log(type)
             if(type.match(/(zip|gz|tar|7z|rar)/)!==null){
                 return require('@/assets/typesIcon/zip.png')
             }
@@ -197,6 +206,14 @@ export default {
                 font-size: 13px;
                 width: 100%;
                 text-align: right;
+                display: flex;
+                justify-content: space-between;
+                .speed{
+                    width: 90%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
             }
             
         }

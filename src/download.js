@@ -22,6 +22,7 @@ exports.initDownload = function (winCache,config) {
     downloadObj.fileName = args.fileName
     console.log("donwload")
     if(fs.existsSync(config.downloadPath)){
+      console.log(downloadObj.downloadPath)
       winCache.mainWin.webContents.downloadURL(downloadObj.downloadPath)
     }else{
       fs.mkdirSync(config.downloadPath)
@@ -42,7 +43,7 @@ exports.initDownload = function (winCache,config) {
           console.log(downloadObj.fileName+'运行中暂停了')
         } else {
           try{
-            winCache.mainWin.webContents.send('downloadUpdateEvent',(item.getReceivedBytes()*100/item.getTotalBytes()).toFixed(2))
+            winCache.mainWin.webContents.send('downloadUpdateEvent',(item.getReceivedBytes()*100/item.getTotalBytes()).toFixed(2),item.getReceivedBytes(),item.getTotalBytes());
           }catch(e){
             item.cancel()
           }

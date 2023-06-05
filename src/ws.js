@@ -11,7 +11,7 @@ import upload from './upload.js'
 import wsCtr from './wsCtr.js';
 import protocolUtil from './protocolUtil';
 const allSockets = new Map();
-const pSize = 256*1024;
+const pSize = 1024*1024;
 var url;
 
 /**
@@ -138,6 +138,7 @@ function handlerTaskCompleted(frame,fileObj,conn){
 function handlerTaskRunning(frame,fileObj,conn){
     fileObj.sendByte = frame.data;
     if(conn.forceClose){
+        wsCtr.getCtrSocket().send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_RUNNING|StatePtl.CANCEL_CONTINUE,0,{uuid:fileObj.uuid})));
         return;
     }
     if(win.isDestroyed()){
@@ -284,9 +285,8 @@ export default{
         /**
          * @type {connection}
          */
-        let ctlConn = wsCtr.getCtrSocket(uid);
+        let ctlConn = wsCtr.getCtrSocket();
         if(ctlConn!=null){
-            ctlConn.c
             ctlConn.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_RUNNING|StatePtl.CANCEL_CONTINUE,0,{uuid:uid})));
         }
         // if(socket!==null||socket!==undefined){

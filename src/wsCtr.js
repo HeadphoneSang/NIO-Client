@@ -7,7 +7,10 @@ import ws from './ws.js'
 import protocolUtil from './protocolUtil';
 const AsyncLock = require('async-lock');
 const lock = new AsyncLock();
-
+/**
+ * @type {connection}
+ */
+var ctrlConn;
 var url;
 var isConnect = false;
 const allSockets = new Map();
@@ -43,6 +46,7 @@ function parseFrame(msg){//将定长协议报文解析为帧
 function handlerTaskCreating(frame,fileObj,conn,dataConn,data){
     switch(frame.protocol & 0xf){
         case StatePtl.CTRL_CREATED:{
+            ctrlConn = conn;
             ws.readFileSendToSocket(fileObj,dataConn,data);
             setTimeout(() => {
                 conn.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_RUNNING|StatePtl.PING,0)));
@@ -75,7 +79,8 @@ function handlerTaskRunning(frame,fileObj,conn,dataConn,data){
 }
 
 function handlerTaskClosed(frame,fileObj,conn,dataConn,data){
-    allSockets.delete(fileObj.uuid);
+    console.log('控制连接已断开');
+    isConnect = false;
     //调用closeSocket
 }
 export default{
@@ -86,36 +91,51 @@ export default{
      */
     createNewControlTask(fileObj,dataConn,data){
         lock.acquire('createCtrlConnect',(done)=>{
-            let client = new WebSocketClient();
-            client.on('connect',(conn)=>{
-                allSockets.set(fileObj.uuid,conn);
-                // console.log(`${fileObj.name}连接已建立`)
-                conn.on('error',(e)=>{
-                    console.log(e)
-                })
-                conn.on('close',(e)=>{
-                    handlerTaskClosed(fileObj,client,conn,dataConn,data);
-                })
-                conn.on('message',(msg)=>{
-                    let frame = parseFrame(msg);
-                    switch(frame.protocol& ~0xf){
-                        case CtrlPtl.TASK_CREATING:
-                            handlerTaskCreating(frame,fileObj,conn,dataConn,data);break;
-                        case CtrlPtl.TASK_RUNNING:{
-                            handlerTaskRunning(frame,fileObj,conn,dataConn,data);break;
+            if(isConnect){
+                if(ctrlConn==null||(!ctrlConn.connected))
+                {
+                    dataConn.close();
+                }else{
+                    ws.readFileSendToSocket(fileObj,dataConn,data);
+                    allSockets.set(fileObj.uuid,{});
+                }
+            }else{
+                let client = new WebSocketClient();
+                client.on('connect',(conn)=>{
+                    // allSockets.set(fileObj.uuid,conn);
+                    // console.log(`${fileObj.name}连接已建立`)
+                    conn.on('error',(e)=>{
+                        console.log(e)
+                    })
+                    conn.on('close',(e)=>{
+                        handlerTaskClosed(fileObj,client,conn,dataConn,data);
+                    })
+                    conn.on('message',(msg)=>{
+                        let frame = parseFrame(msg);
+                        switch(frame.protocol& ~0xf){
+                            case CtrlPtl.TASK_CREATING:
+                                handlerTaskCreating(frame,fileObj,conn,dataConn,data);break;
+                            case CtrlPtl.TASK_RUNNING:{
+                                handlerTaskRunning(frame,fileObj,conn,dataConn,data);break;
+                            }
                         }
-                    }
+                    })
+                    conn.send(JSON.stringify(proUtil.createFrame(CtrlPtl.TASK_CREATING|StatePtl.CREATE_CTRL,0)));
+                });
+                client.on('connectFailed',(err)=>{
+                    console.log(err);
+                    isConnect = false;
                 })
-                conn.send(JSON.stringify(proUtil.createFrame(CtrlPtl.TASK_CREATING|StatePtl.CREATE_CTRL,0,{uuid:fileObj.uuid})));
-            });
-            client.connect(url);
-            isConnect = true;
+                client.connect(url);
+                isConnect = true;
+                allSockets.set(fileObj.uuid,{});
+            }
             done();
         })
     },
 
     deleteCtrlSocket(uuid){
-        allSockets.delete(uuid);
+        //allSockets.delete(uuid);
     },
     /**
      * 通过控制连接关闭socket通道
@@ -131,12 +151,13 @@ export default{
         allSockets.forEach(
             /**
              * 
-             * @param {connection} socket 
+             * 
              * @param {*} key 
-             */(socket,key)=>{
-                socket.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_RUNNING|StatePtl.CANCEL_CONTINUE,0,{uuid:key})));
+             */(place,key)=>{
+                if(ctrlConn!=null&&ctrlConn.connected)
+                    ctrlConn.send(JSON.stringify(protocolUtil.createFrame(CtrlPtl.TASK_RUNNING|StatePtl.CANCEL_CONTINUE,0,{uuid:key})));
         })
-        allSockets.clear()
+        allSockets.clear();
     },
     /**
      * 
@@ -152,7 +173,7 @@ export default{
     setUrl(u){
         url = `ws${u.substring(u.indexOf(':'))}/ws`
     },
-    getCtrSocket(uuid){
-        return allSockets.get(uuid);
+    getCtrSocket(){
+        return ctrlConn;
     }
 }

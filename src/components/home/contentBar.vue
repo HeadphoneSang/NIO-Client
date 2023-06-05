@@ -200,14 +200,17 @@ export default {
               title:this.title,
               fileList:res.data.list
             })
-
             return true
           }else{
-            swal(data.msg)
+            swal({
+              title:"请求提示",
+              text:data.msg,
+              icon: "warning"
+            })
             return false
           }
         }else{
-          swal("读取文件内容失败!")
+          swal("网络请求错误!")
           return false
         }
       }catch(e){

@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp} from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
@@ -8,6 +8,7 @@ import 'bootstrap/dist/js/bootstrap.js'
 import 'jquery/dist/jquery.min.js'
 import axios from 'axios';
 import CryptoJS from 'crypto-js'
+import vue3PreviewImage from 'vue3-preview-image'
 // 十六位十六进制数作为密钥
 const SECRET_KEY = CryptoJS.enc.Utf8.parse("3333e6e143439161");
 // 十六位十六进制数作为密钥偏移量
@@ -50,8 +51,32 @@ function decrypt(data) {
     return decryptedStr.toString();
 }
 
+function formatSize(size){
+  let unit = null;
+  let units = ["GB","MB","KB","B","bit"];
+  let s = 0;
+  for(let i = 1024*1024*1024,j=0;j<5;i=i/1024,j++){
+      if(i==0){
+          unit = units[j];
+          break;
+      }
+      let main = size/i;
+      if(main>=1){
+          unit = units[j];
+          s = size/i;
+          break;
+      }
+  }
+  if(unit==null)
+    unit = '?';
+  if(unit=="bit")
+    return size+" "+unit;
+  return s.toFixed(2)+" "+unit;
+}
+
 const app = createApp(App)
 app.use(store).use(router).mount('#app')
+app.use(vue3PreviewImage);
 app.config.globalProperties.$http = axios
 app.config.globalProperties.$encode = encrypt
 app.config.globalProperties.$decode = decrypt
@@ -103,5 +128,7 @@ function getGuid() {
 }
 
 app.config.globalProperties.$guid = getGuid
+app.config.globalProperties.$formatSize = formatSize
+
 
 

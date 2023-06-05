@@ -1,5 +1,5 @@
 <template>
-  <div class="file-item" :title="item.name" >
+  <div class="file-item" :title="item.name" @dblclick="preView()">
     <div :class="'out-container cursor-pointer '+(item.state===1?'checked':' ')" @mouseenter.stop="hover=true" @mouseleave.stop="hover=false" @click.stop="clickItem" :flag="flag">
         <img :src="ico" :flag="flag">
         <div class="name"  :flag="flag">
@@ -20,6 +20,7 @@
             <div class="func-container" @click.stop="clickSubItem('move')" v-if="fatherTtitle=='files'||fatherTtitle=='recycle'||fatherTtitle=='lock'">移动</div>
             <div class="func-container" @click.stop="clickSubItem('rename')" v-if="fatherTtitle=='files'||fatherTtitle=='recycle'||fatherTtitle=='lock'">重命名</div>
             <div class="func-container" @click.stop="clickSubItem('detail')">详细信息</div>
+            <div class="func-container" @click.stop="clickSubItem('share')" v-if="item.type!='directory'">分享下载链接</div>
         </div>
     </div>
     <div :class="loading?'spinner-border':'spinner-hidden'" role="status">
@@ -70,6 +71,7 @@ export default {
             hover:false,
             showSub:false,
             flag:this.item.modifier+'b',
+            previewIcon:'',
             unshow:(e)=>{
                 if(this.showMove){
                     return
@@ -104,6 +106,11 @@ export default {
     },
     methods:{
         ...mapMutations(['changeFileState','showSubWindow','pushFileToDownloadQueue']),
+        preView(){
+            if(this.item.type.match(/(jpg|jpeg|gif|png|psd|tga|pcx|ico)/)!==null){
+                this.$preview(this.previewIcon);
+            }
+        },
         clickMenu(){
             this.showSub = true
         },
@@ -121,42 +128,88 @@ export default {
             this.loading = true
             switch(func){
                 case 'download':{
-                    this.pushToDownloadQueu()
+                    this.pushToDownloadQueu();
                     break;
                 }
                 case 'recycle':{
-                    await this.recycleItem()
+                    await this.recycleItem();
                     break;
                 }
                 case 'delete':{
-                    await this.delete()
+                    await this.delete();
                     break;
                 }
                 case 'lock':{
-                    await this.lock()
+                    await this.lock();
                     break;
                 }
                 case 'collect':{
-                    await this.collect()
+                    await this.collect();
                     break;
                 }
                 case 'move':{
-                    this.moveItem()
+                    this.moveItem();
                     break;
                 }
                 case 'uncollect':{
-                    await this.uncollect()
+                    await this.uncollect();
                     break;
                 }
                 case 'rename':{
-                    await this.renameFile()
+                    await this.renameFile();
                     break;
                 }
                 case 'detail':{
-                    await this.getDetail()
+                    await this.getDetail();
+                    break;
+                }
+                case 'share':{
+                    await this.shareDownload();
+                    break;
                 }
             }
             this.loading = false
+        },
+        async shareDownload(){
+            var elem = document.createElement("div");
+            let url = `${this.$http.defaults.baseURL}/download/${this.item.modifier}/`
+            let close = require('@/assets/close.png')
+            elem.innerHTML = `
+            <div class='title'>分享文件<img src="${close}" onclick="swal.close()"></img> </div>
+            <div class='text'>请勿分享奇怪的东西,出现任何后果一律由操作用户承担!</div>
+            <div class='img-container'>
+                <img src="${this.ico}"></img>
+                <div class='desc'>${this.item.name} </div>
+            </div>
+            <div class='url-container'>
+                <div class='url-title'>分享链接</div>
+                <div class='url'>${url.length>30?(url.substring(0,40))+'...':url}</div>
+            </div>
+            `;
+            let confirm = await swal({
+                className: 'share',
+                content:elem,
+                closeOnClickOutside:false,
+                buttons:{
+                    copy:{
+                        text:"复制链接",
+                        value:true
+                    }
+                }
+            })
+            if(confirm){
+                let area = document.createElement('textarea');
+                area.innerText = url;
+                document.body.appendChild(area);
+                area.select();
+                document.execCommand("Copy");
+                document.body.removeChild(area);
+                swal({
+                    title:"分享提示",
+                    text:"已复制链接到剪贴板!",
+                    icon:"success"
+                })
+            }
         },
         async getDetail(){
             try {
@@ -230,7 +283,7 @@ export default {
                 content: {
                   element: "input",
                   attributes: {
-                    placeholder: "新名称",
+                    placeholder: "请输入新文件名称(不包括后缀扩展名)",
                   },
                 },
             })
@@ -259,7 +312,11 @@ export default {
                     progress:0,
                     downloading:false,
                     username:this.userInfo.username,
-                    type:this.item.type
+                    type:this.item.type,
+                    beforeTime:0,
+                    sendByte:0,
+                    size:0,
+                    speed:0
                 }
             })
             swal({
@@ -538,8 +595,9 @@ export default {
             if(this.item.type==='css'){
                 return this.ico = require('@/assets/typesIcon/css.png')
             }
-            if(this.item.type.match(/(jpg|jpeg|gif|png|psd|tga|pcx)/)!==null){
+            if(this.item.type.match(/(jpg|jpeg|gif|png|psd|tga|pcx|ico)/)!==null){
                 // return this.ico = require('@/assets/typesIcon/image.png')
+                this.previewIcon = this.$http.defaults.baseURL+"/file/getImgByModifier/"+this.item.modifier;
                 return this.ico = this.$http.defaults.baseURL+"/file/getResourceByModifier/"+this.item.modifier;
             }
             
@@ -547,7 +605,7 @@ export default {
         }
     },
     created(){
-        if(this.item.type.match(/(jpg|jpeg|gif|png|psd|tga|pcx)/)!==null){
+        if(this.item.type.match(/(jpg|jpeg|gif|png|psd|tga|pcx|ico)/)!==null){
             this.ico = require('@/assets/typesIcon/image.png')
         }
         this.initIcon()

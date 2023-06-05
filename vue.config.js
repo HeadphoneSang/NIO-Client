@@ -9,6 +9,7 @@ module.exports = defineConfig({
         // options placed here will be merged with default configuration and passed to electron-builder
         productName: "云上云下",
         appId: "com.chbcraft.app",
+        
         extraResources: [
             { "from": "./config.json", "to": "../" },
             { "from": "./public/icons", "to": "../" },
