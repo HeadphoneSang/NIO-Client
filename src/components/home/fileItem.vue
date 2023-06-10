@@ -172,7 +172,10 @@ export default {
         },
         async shareDownload(){
             var elem = document.createElement("div");
-            let url = `${this.$http.defaults.baseURL}/download/${this.item.modifier}/`
+            let url = `${this.$http.defaults.baseURL}/download/${this.item.modifier}/`;
+            if(this.item.type==='html'||this.item.type==='htm'){
+                url = `${this.$http.defaults.baseURL}/file/getHtml/${this.item.modifier}`
+            }
             let close = require('@/assets/close.png')
             elem.innerHTML = `
             <div class='title'>分享文件<img src="${close}" onclick="swal.close()"></img> </div>
